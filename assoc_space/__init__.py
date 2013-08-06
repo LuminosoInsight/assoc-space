@@ -131,17 +131,25 @@ class AssocSpace(object):
 
     @classmethod
     def from_sparse_storage(cls, storage, k, strip_a0=False,
+                            offset_weight=8e-6,
                             normalize_gm=True):
         """
         Build an AssocSpace from a SparseEntryStorage.
 
         This is a helper method; see from_entries() for usage.  Note that it
         calls labels_and_matrix() on the storage, which is destructive!
+
+        If `normalize_gm` is True, we'll modify the entries to make their
+        magnitudes more comparable. Each entry will be divided by a quantity
+        that is the geometric mean of its row sum and its column sum, plus
+        an offset that penalizes rows/columns that are too sparsely
+        represented.
         """
         labels, matrix = storage.labels_and_matrix()
         if normalize_gm:
             sums = matrix.sum(0)
-            normalizer = spdiags(1.0 / np.sqrt(sums + np.sum(sums) * 8e-6), 0,
+            offset = np.sum(sums) * offset_weight
+            normalizer = spdiags(1.0 / np.sqrt(sums + offset), 0,
                                  len(labels), len(labels))
             matrix = normalizer * matrix * normalizer
         return cls.from_matrix(matrix, k, labels, strip_a0=strip_a0)
