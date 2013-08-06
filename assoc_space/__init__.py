@@ -124,6 +124,10 @@ class AssocSpace(object):
         that might eventually normalize the rows and columns to have unit sum.
         However, we want to suppress sufficiently rare terms altogether, so we
         add an offset.  Ugly, but works well enough.
+
+        At Luminoso, we have found that k=150 and offset_weight=8e-6 are
+        parameters that work well for various kinds of input data. Your
+        mileage may vary.
         """
         storage = SparseEntryStorage()
         storage.add_entries(entries)
@@ -139,11 +143,7 @@ class AssocSpace(object):
         This is a helper method; see from_entries() for usage.  Note that it
         calls labels_and_matrix() on the storage, which is destructive!
 
-        If `normalize_gm` is True, we'll modify the entries to make their
-        magnitudes more comparable. Each entry will be divided by a quantity
-        that is the geometric mean of its row sum and its column sum, plus
-        an offset that penalizes rows/columns that are too sparsely
-        represented.
+        See `from_entries` for a description of the parameters.
         """
         labels, matrix = storage.labels_and_matrix()
         if normalize_gm:
