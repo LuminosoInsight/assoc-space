@@ -55,15 +55,11 @@ class SparseEntryStorage(object):
     def labels_and_matrix(self):
         """
         Return the labels and symmetrized sparse matrix.
-
-        Resets the content of the storage (before building the sparse matrix)
-        to reduce memory costs.
         """
         # Borrowed from scipy.sparse.dok_matrix.tocoo()
         data = np.asarray(self.entries.values(), dtype='d')
         indices = np.asarray(self.entries.keys(), dtype=np.intc).T
         labels = self.labels
-        self.reset()
 
         matrix = coo_matrix((data, indices), shape=(len(labels), len(labels)))
         return labels, matrix + matrix.T
@@ -140,10 +136,8 @@ class AssocSpace(object):
         """
         Build an AssocSpace from a SparseEntryStorage.
 
-        This is a helper method; see from_entries() for usage.  Note that it
-        calls labels_and_matrix() on the storage, which is destructive!
-
-        See `from_entries` for a description of the parameters.
+        This is a helper method; see from_entries() for usage and a
+        description of the parameters.
         """
         labels, matrix = storage.labels_and_matrix()
         if normalize_gm:
