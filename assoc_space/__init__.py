@@ -39,7 +39,7 @@ class SparseEntryStorage(object):
 
     def reset(self):
         """
-        Reset to an empty bucket.
+        Resets this SparseEntryStorage to being empty.
         """
         self.labels = OrderedSet()
         self.entries = defaultdict(float)
@@ -56,7 +56,7 @@ class SparseEntryStorage(object):
         """
         Return the labels and symmetrized sparse matrix.
 
-        Resets the content of the bucket (before building the sparse matrix)
+        Resets the content of the storage (before building the sparse matrix)
         to reduce memory costs.
         """
         # Borrowed from scipy.sparse.dok_matrix.tocoo()
@@ -125,19 +125,20 @@ class AssocSpace(object):
         However, we want to suppress sufficiently rare terms altogether, so we
         add an offset.  Ugly, but works well enough.
         """
-        bucket = SparseEntryStorage()
-        bucket.add_entries(entries)
-        return cls.from_bucket(bucket, k, **kwargs)
+        storage = SparseEntryStorage()
+        storage.add_entries(entries)
+        return cls.from_sparse_storage(storage, k, **kwargs)
 
     @classmethod
-    def from_bucket(cls, bucket, k, strip_a0=False, normalize_gm=True):
+    def from_sparse_storage(cls, storage, k, strip_a0=False,
+                            normalize_gm=True):
         """
         Build an AssocSpace from a SparseEntryStorage.
 
         This is a helper method; see from_entries() for usage.  Note that it
-        calls labels_and_matrix() on the bucket, which is destructive!
+        calls labels_and_matrix() on the storage, which is destructive!
         """
-        labels, matrix = bucket.labels_and_matrix()
+        labels, matrix = storage.labels_and_matrix()
         if normalize_gm:
             sums = matrix.sum(0)
             normalizer = spdiags(1.0 / np.sqrt(sums + np.sum(sums) * 8e-6), 0,
@@ -374,7 +375,8 @@ def eigensystem(mat, k, strip_a0=False):
     if real_k < 1:
         raise ValueError("Attempted to solve for no eigenvalues.")
 
-    # Find the largest absolute eigenvalues
+    # Find the largest eigenvalues. 'LA' means 'largest algebraic': that is,
+    # we don't want large negative eigenvalues.
     S, U = scipy.sparse.linalg.eigen.eigsh(mat.tocsr(), k=real_k, which='LA')
 
     # Sort and trim

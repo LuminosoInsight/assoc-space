@@ -81,5 +81,3 @@ def test_association_calculations():
     assoc = AssocSpace.from_entries(entries, 3)
     assert abs(assoc.assoc_between_two_terms('apple', 'apple') - 1.0) < 1e-3
     assert assoc.assoc_between_two_terms('apple', 'banana') < 0.9
-
-# TODO: test merging
