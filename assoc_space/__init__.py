@@ -44,6 +44,14 @@ class SparseEntryStorage(object):
         self.labels = OrderedSet()
         self.entries = defaultdict(float)
 
+    def add_entry(self, entry):
+        """
+        Add a single triple of the form (value, row_label, col_label).
+        """
+        value, row_label, col_label = entry
+        key = (self.labels.add(row_label), self.labels.add(col_label))
+        self.entries[key] += value
+
     def add_entries(self, entries):
         """
         Add triples of the form (value, row_label, col_label).
