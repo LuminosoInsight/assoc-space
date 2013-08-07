@@ -64,10 +64,10 @@ def build_assoc_space(input_file, output_dir):
     # Add links from a concept to itself, and negative links to its opposite if it's there
     for concept in counts:
         if concept_is_frequent_enough(concept, counts):
-            sparse.add_entry((5., concept, concept))
+            sparse.add_entry((1., concept, concept))
             negation = negate_concept(concept)
             if concept_is_frequent_enough(negation, counts):
-                sparse.add_entry((-5., concept, negation))
+                sparse.add_entry((-1., concept, negation))
 
     print('making assoc space')
     space = AssocSpace.from_sparse_storage(sparse, 150)

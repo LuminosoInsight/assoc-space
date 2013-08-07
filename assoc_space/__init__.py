@@ -149,7 +149,7 @@ class AssocSpace(object):
         """
         labels, matrix = storage.labels_and_matrix()
         if normalize_gm:
-            sums = matrix.sum(0)
+            sums = np.absolute(matrix).sum(0)
             offset = np.sum(sums) * offset_weight
             normalizer = spdiags(1.0 / np.sqrt(sums + offset), 0,
                                  len(labels), len(labels))
