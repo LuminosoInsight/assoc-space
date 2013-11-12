@@ -24,9 +24,10 @@ def concept_is_frequent_enough(uri, counts):
     keep even the concepts that appear once. It may be a link to a reasonable
     English translation, for example.
     """
+    occurrences = counts.get(uri, 0) + counts.get(negate_concept(uri), 0)
     if not uri.startswith('/c/en/'):
-        return True
-    return (counts.get(uri, 0) + (uri.endswith('/neg')) > 1)
+        occurrences += 1
+    return occurrences >= 3
 
 
 def negate_concept(concept):
@@ -70,7 +71,7 @@ def build_assoc_space(input_file, output_dir):
                 sparse.add_entry((-1., concept, negation))
 
     print('making assoc space')
-    space = AssocSpace.from_sparse_storage(sparse, 150, offset_weight=4e-5)
+    space = AssocSpace.from_sparse_storage(sparse, 300)
 
     print('saving')
     space.save_dir(output_dir)
