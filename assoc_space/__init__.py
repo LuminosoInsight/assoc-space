@@ -148,6 +148,8 @@ class AssocSpace(object):
         description of the parameters.
         """
         labels, matrix = storage.labels_and_matrix()
+        print "Number of labels: %s" % len(labels)
+        print "Matrix shape: %s" % (matrix.shape,)
         if normalize_gm:
             sums = np.absolute(matrix).sum(0)
             offset = np.sum(sums) * offset_weight
@@ -385,9 +387,8 @@ def eigensystem(mat, k, strip_a0=False):
     if real_k < 1:
         raise ValueError("Attempted to solve for no eigenvalues.")
 
-    # Find the largest eigenvalues. 'LA' means 'largest algebraic': that is,
-    # we don't want large negative eigenvalues.
-    S, U = scipy.sparse.linalg.eigen.eigsh(mat.tocsr(), k=real_k, which='LA')
+    # Find the largest eigenvalues.
+    S, U = scipy.sparse.linalg.eigen.eigsh(mat.tocsr(), k=real_k)
 
     # Sort and trim
     order = np.argsort(S)[::-1]
