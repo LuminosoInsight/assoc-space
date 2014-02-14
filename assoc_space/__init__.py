@@ -352,7 +352,7 @@ class AssocSpace(object):
         Take in a category vector, and returns a list of (term, similarity)
         tuples.  It will be sorted in descending order by similarity.
         """
-        similarity = zip(self.labels, np.dot(self.assoc, vec))
+        similarity = list(zip(self.labels, np.dot(self.assoc, vec)))
         similarity.sort(key=lambda item: -item[1])
         return similarity
 
