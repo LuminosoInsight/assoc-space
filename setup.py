@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="assoc_space",
-    version='0.1',
+    version='0.2',
     maintainer='Luminoso Technologies, Inc.',
     maintainer_email='dev@luminoso.com',
     license="MIT",
