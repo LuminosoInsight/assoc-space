@@ -65,8 +65,8 @@ class SparseEntryStorage(object):
         Return the labels and symmetrized sparse matrix.
         """
         # Borrowed from scipy.sparse.dok_matrix.tocoo()
-        data = np.asarray(self.entries.values(), dtype='d')
-        indices = np.asarray(self.entries.keys(), dtype=np.intc).T
+        data = np.asarray(list(self.entries.values()), dtype='d')
+        indices = np.asarray(list(self.entries.keys()), dtype=np.intc).T
         labels = self.labels
 
         matrix = coo_matrix((data, indices), shape=(len(labels), len(labels)))
