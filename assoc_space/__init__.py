@@ -3,8 +3,12 @@ import scipy.sparse.linalg.eigen
 from scipy.sparse import coo_matrix, spdiags
 from ordered_set import OrderedSet
 from collections import defaultdict
+import sys
 import os
 import codecs
+
+if sys.version_info.major >= 3:
+    xrange = range
 
 SMALL = 1e-6
 
