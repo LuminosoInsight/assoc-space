@@ -108,13 +108,20 @@ class SparseEntryStorage(object):
         self.labels = LabelSet()
         self.entries = defaultdict(float)
 
-    def add_entries(self, entries):
+    def add_entries(self, entries, upper_triangular=True):
         """
         Add triples of the form (value, row_label, col_label).
+
+        If `upper_triangular` is True, this will make sure to only write
+        entries into the upper triangle of the matrix. This can be convenient
+        for SciPy methods that work with symmetric matrices (they don't use
+        the lower triangle).
         """
         for value, row_label, col_label in entries:
-            key = (self.labels.add(row_label), self.labels.add(col_label))
-            self.entries[key] += value
+            row, col = (self.labels.add(row_label), self.labels.add(col_label))
+            if upper_triangular and col < row:
+                row, col = col, row
+            self.entries[(row, col)] += value
 
     def labels_and_matrix(self):
         """
