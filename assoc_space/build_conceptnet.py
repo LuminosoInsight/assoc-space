@@ -6,7 +6,7 @@ import argparse
 def concept_is_bad(uri):
     """
     Skip concepts that are unlikely to be useful.
-    
+
     A concept containing too many underscores is probably a long, overly
     specific phrase, possibly mis-parsed. A concept with a colon is probably
     detritus from a wiki.
@@ -24,9 +24,7 @@ def concept_is_frequent_enough(uri, counts):
     keep even the concepts that appear once. It may be a link to a reasonable
     English translation, for example.
     """
-    if not uri.startswith('/c/en/'):
-        return True
-    return (counts.get(uri, 0) + (uri.endswith('/neg')) > 1)
+    return (counts.get(uri, 0) > 1)
 
 
 def negate_concept(concept):
@@ -70,7 +68,7 @@ def build_assoc_space(input_file, output_dir):
                 sparse.add_entry((-1., concept, negation))
 
     print('making assoc space')
-    space = AssocSpace.from_sparse_storage(sparse, 150, offset_weight=4e-5)
+    space = AssocSpace.from_sparse_storage(sparse, 300, offset_weight=4e-5)
 
     print('saving')
     space.save_dir(output_dir)
@@ -83,4 +81,3 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     build_assoc_space(args.input_file, args.output_dir)
-
