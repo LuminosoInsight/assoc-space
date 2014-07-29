@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import scipy.sparse.linalg.eigen
 from scipy.sparse import coo_matrix, spdiags
@@ -231,7 +232,7 @@ class AssocSpace(object):
         label_file = codecs.open(dirname + '/labels.txt', 'w',
                                  encoding='utf-8')
         for label in self.labels:
-            print >> label_file, label
+            print(label, file=label_file)
         label_file.close()
 
     @classmethod
