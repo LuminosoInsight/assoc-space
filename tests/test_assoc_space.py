@@ -136,7 +136,7 @@ def test_merging():
     # Generate test assoc spaces and merge them
     assoc1 = AssocSpace.from_entries(ENTRIES, k=4)
     assoc2 = AssocSpace.from_entries(MORE_ENTRIES, k=4)
-    merged = assoc1.merged_with(assoc2)
+    merged = assoc1.merge_dissimilar(assoc2)
 
     # Check some simple things
     eq_(merged.k, 4)

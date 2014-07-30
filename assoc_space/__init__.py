@@ -14,8 +14,7 @@ from .util import lazy_property
 
 # A version of ordered_set.OrderedSet specialized to our purposes.  It eschews
 # some of the type checking that we don't use, and includes code which defers
-# creating the labels-to-indices dict until required.  (For some applications,
-# notably loading background spaces, this dict is never required.)
+# creating the labels-to-indices dict until required.
 class LabelSet(object):
     """
     Set of (unique) labels for an external sequence (such as a matrix).
@@ -100,37 +99,35 @@ class LabelSet(object):
 
 class SparseEntryStorage(object):
     """
-    Helper class for AssocSpace that is also useful for the pipeline;
-    stores entries of a labeled sparse matrix in an efficient format.
+    A helper class that stores entries of a labeled sparse matrix in
+    an efficient format.
     """
 
     def __init__(self):
         self.labels = LabelSet()
         self.entries = defaultdict(float)
+        self.total_weight = 0.
 
-    def add_entries(self, entries, upper_triangular=True):
+    def add_entries(self, entries):
         """
         Add triples of the form (value, row_label, col_label).
-
-        If `upper_triangular` is True, this will make sure to only write
-        entries into the upper triangle of the matrix. This can be convenient
-        for SciPy methods that work with symmetric matrices (they don't use
-        the lower triangle).
         """
         for value, row_label, col_label in entries:
             row, col = (self.labels.add(row_label), self.labels.add(col_label))
-            if upper_triangular and col < row:
-                row, col = col, row
             self.entries[(row, col)] += value
+            self.total_weight += abs(value)
 
-    def labels_and_matrix(self):
+    def get_matrix_and_metadata(self):
         """
-        Create a SciPy coo_matrix (a sparse matrix that stores entries
-        by listing their coordinates) from the entries that have been stored
+        Create a symmetric SciPy matrix from the entries that have been stored
         here.
 
-        Returns (labels, matrix), where labels is a LabelSet and matrix is a
-        coo_matrix.
+        Returns a triple of (matrix, labels, weight), representing the
+        following:
+
+        - matrix, the sparse matrix in SciPy coo_matrix format
+        - labels, the LabelSet indicating what the rows and columns mean
+        - total_weight, the sum of the absolute values of entries in the matrix
         """
         # The indices array ends up with the wrong shape if there are no
         # entries at all
@@ -143,7 +140,7 @@ class SparseEntryStorage(object):
             size = len(self.labels)
             matrix = coo_matrix((data, indices), shape=(size, size))
 
-        return self.labels, matrix + matrix.T
+        return matrix + matrix.T, self.labels, self.total_weight
 
 
 class AssocSpace(object):
@@ -195,7 +192,7 @@ class AssocSpace(object):
 
     @classmethod
     def from_matrix(cls, matrix, labels, k, offset_weight=8e-6,
-                    strip_a0=True, normalize_gm=True):
+                    matrix_sum=None, strip_a0=True, normalize_gm=True):
         '''
         Build an AssocSpace from a SciPy sparse matrix and a LabelSet.
 
@@ -216,12 +213,14 @@ class AssocSpace(object):
         if not labels:
             return None
 
-        sums = matrix.sum(0)
-        overall_sum = np.sum(sums)
-        logger.info('Building space with k=%d (sum=%.6f).' % (k, overall_sum))
+        if matrix_sum is None:
+            sums = matrix.sum(0)
+            matrix_sum = np.sum(sums)
+
+        logger.info('Building space with k=%d (sum=%.6f).' % (k, matrix_sum))
 
         if normalize_gm:
-            offset = overall_sum * offset_weight
+            offset = matrix_sum * offset_weight
             normalizer = spdiags(1.0 / np.sqrt(sums + offset), 0,
                                  matrix.shape[0], matrix.shape[0])
             matrix = normalizer * matrix * normalizer
@@ -246,7 +245,7 @@ class AssocSpace(object):
         """
         bucket = SparseEntryStorage()
         bucket.add_entries(entries)
-        labels, matrix = bucket.labels_and_matrix()
+        matrix, labels, weight = bucket.get_matrix_and_metadata()
         return cls.from_matrix(matrix, labels, **kwargs)
 
     @lazy_property
@@ -395,12 +394,15 @@ class AssocSpace(object):
         u, s = eigenmath.redecompose(np.vstack(rows), self.sigma)
         return self.__class__(u, s, labels)
 
-    def merged_with(self, other, weights=(1.0, 1.0)):
+    def merge_dissimilar(self, other, weights=(1.0, 1.0)):
         '''
         Construct a new AssocSpace formed by merging this one with another.
-
+        The two matrices can come from different sets of data.
         The result approximates the sum of the underlying associations from
         the two spaces, using the dimensionality of this space.
+
+        If the two matrices contain entries sampled randomly from a more
+        complete matrix, consider using `merge_similar`, which is simpler.
 
         By default the largest eigenvalue of each space is normalized to 1.0
         before merging.  This normalization can be changed by passing the
@@ -423,6 +425,9 @@ class AssocSpace(object):
         )
 
         return self.__class__(new_u, new_sigma, merged_labels)
+
+    def merge_similar(self, other, weights=(1.0, 1.0)):
+        raise NotImplementedError
 
     def truncated_to(self, k):
         '''
