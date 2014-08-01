@@ -87,7 +87,7 @@ class LabelSet(object):
         """
         return {x: i for i, x in enumerate(self.items)}
 
-    def merged(self, other):
+    def merge(self, other):
         """
         Copy this LabelSet, then merge another LabelSet into the copy.
 
@@ -95,6 +95,18 @@ class LabelSet(object):
         """
         merged = self.copy()
         return merged, [merged.add(x) for x in other.items]
+
+    def merge_many(self, others):
+        """
+        Copy this LabelSet, then merge an arbitrary number of LabelSets into
+        the copy. Return the merged labels, and a list of indices for every
+        merged LabelSet, indicating where its items are in the merged result.
+        """
+        merged = self.copy()
+        index_lists = []
+        for other_labels in others:
+            index_lists.append([merged.add(x) for x in other_labels.items])
+        return merged, index_lists
 
 
 class SparseEntryStorage(object):
@@ -394,6 +406,31 @@ class AssocSpace(object):
         u, s = eigenmath.redecompose(np.vstack(rows), self.sigma)
         return self.__class__(u, s, labels)
 
+    def merge_similar(self, others, weights=None):
+        '''
+        Construct a new AssocSpace formed by merging this one with another,
+        assuming that the spaces were built from subsamples of the same set
+        of data.
+        '''
+        if weights is None:
+            weights = (1.0,) * (len(others) + 1)
+        merged_labels, index_lists = self.labels.merge_many(
+            [other.labels for other in others]
+        )
+        self_expanded = np.zeros((len(merged_labels), self.k))
+        self_expanded[:self.u.shape[0], :] = self.u
+
+        decompositions = [(self_expanded, self.sigma * weights[0])]
+
+        for other, indices, weight in zip(others, index_lists, weights[:1]):
+            other_expanded = np.zeros((len(merged_labels), other.k))
+            other_expanded[indices, :] = other.u * weight
+            decompositions.append((other_expanded, other.sigma * weight))
+
+        new_u, new_sigma = eigenmath.combine_similar_eigenspaces(
+            decompositions, self.k
+        )
+
     def merge_dissimilar(self, other, weights=(1.0, 1.0)):
         '''
         Construct a new AssocSpace formed by merging this one with another.
@@ -409,7 +446,7 @@ class AssocSpace(object):
         weights argument, which is a tuple in the order (self, other).
         '''
         # Merge the labels and create expanded, aligned U matrices
-        merged_labels, indices = self.labels.merged(other.labels)
+        merged_labels, indices = self.labels.merge(other.labels)
         self_expanded = np.zeros((len(merged_labels), self.k))
         self_expanded[:self.u.shape[0], :] = self.u
         other_expanded = np.zeros((len(merged_labels), other.k))
@@ -419,15 +456,12 @@ class AssocSpace(object):
 
         # The largest eigenvalue is already normalized to 1 by the constructor
         new_u, new_sigma = eigenmath.combine_dissimilar_eigenspaces(
-            self_expanded, self.sigma * self_weight,
-            other_expanded, other.sigma * other_weight,
+            [(self_expanded, self.sigma * self_weight),
+             (other_expanded, other.sigma * other_weight)],
             self.k
         )
 
         return self.__class__(new_u, new_sigma, merged_labels)
-
-    def merge_similar(self, other, weights=(1.0, 1.0)):
-        raise NotImplementedError
 
     def truncated_to(self, k):
         '''

@@ -2,7 +2,7 @@ from assoc_space import AssocSpace, LabelSet
 import numpy as np
 import pickle
 from nose.tools import eq_, assert_raises
-from lumi_science.eigenmath import norm, normalize
+from assoc_space.eigenmath import norm, normalize
 
 DBNAME = None
 DB = None

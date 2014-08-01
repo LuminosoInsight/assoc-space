@@ -33,7 +33,7 @@ def test_label_set():
 
     # merged
     s1 = LabelSet(['f', 'b', 'g', 'c'])
-    merged, indices = s.merged(s1)
+    merged, indices = s.merge(s1)
     eq_(len(s), 5)
     eq_(merged, LabelSet(['a', 'b', 'e', 'd', 'c', 'f', 'g']))
     eq_(indices, [5, 1, 6, 4])
