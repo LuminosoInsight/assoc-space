@@ -3,7 +3,7 @@ import numpy as np
 import scipy.sparse
 
 from assoc_space.eigenmath import norm, normalize, normalize_rows, \
-    eigensystem, combine_dissimilar_eigenspaces, redecompose
+    eigensystem, redecompose, combine_eigenspaces
 
 
 def compare_cols_within_sign(m1, m2):
@@ -39,17 +39,19 @@ def test_normalize_rows():
     assert (normalized_with_offset[0] > normalized_with_offset[1]).all()
 
 
+# The matrix here is the symmetric Markov matrix
+#     0.0 0.3 0.6 0.1
+#     0.3 0.0 0.1 0.6
+#     0.6 0.1 0.0 0.3
+#     0.1 0.6 0.3 0.0
+# with eigenvalues (1, 0.2, -0.4, -0.8) and eigenvectors (up to sign)
+#     [0.5, 0.5, 0.5, 0.5]
+#     [-0.5, 0.5, -0.5, 0.5]
+#     [0.5, 0.5, -0.5, -0.5]
+#     [0.5, -0.5, -0.5, 0.5]
+
+
 def test_eigensystem():
-    # The matrix here is the symmetric Markov matrix
-    #     0.0 0.3 0.6 0.1
-    #     0.3 0.0 0.1 0.6
-    #     0.6 0.1 0.0 0.3
-    #     0.1 0.6 0.3 0.0
-    # with eigenvalues (1, 0.2, -0.4, -0.8) and eigenvectors (up to sign)
-    #     [0.5, 0.5, 0.5, 0.5]
-    #     [-0.5, 0.5, -0.5, 0.5]
-    #     [0.5, 0.5, -0.5, -0.5]
-    #     [0.5, -0.5, -0.5, 0.5]
     spmat = scipy.sparse.coo_matrix(
         ([0.3, 0.6, 0.1, 0.3, 0.1, 0.6, 0.6, 0.1, 0.3, 0.1, 0.6, 0.3],
          ([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3],
@@ -98,7 +100,7 @@ def test_combine_dissimilar_eigenspaces():
     s2 = np.asarray([1.0, 0.5])
 
     # The combined decomposition
-    u_c, s_c = combine_dissimilar_eigenspaces([(u1, s1), (u2, s2)], 3)
+    u_c, s_c = combine_eigenspaces([(u1, s1), (u2, s2)], 3)
 
     # The decomposition of the sum of the matrices
     s_ref, u_ref = np.linalg.eigh(undecompose(u1, s1) + undecompose(u2, s2))

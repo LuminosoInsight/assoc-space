@@ -11,6 +11,23 @@ from . import eigenmath
 from .compat import values, izip, zip, FileNotFoundError
 from .util import lazy_property
 
+SLICE_ALL = slice(None)
+
+
+def is_iterable(obj):
+    """
+    Are we being asked to look up a list of things, instead of a single thing?
+    We check for the `__iter__` attribute so that this can cover types that
+    don't have to be known by this module, such as NumPy arrays.
+
+    Strings, however, should be considered as atomic values to look up, not
+    iterables.
+
+    We don't need to check for the Python 2 `unicode` type, because it doesn't
+    have an `__iter__` attribute anyway.
+    """
+    return hasattr(obj, '__iter__') and not isinstance(obj, str)
+
 
 # A version of ordered_set.OrderedSet specialized to our purposes.  It eschews
 # some of the type checking that we don't use, and includes code which defers
@@ -47,8 +64,31 @@ class LabelSet(object):
     def __len__(self):
         return len(self.items)
 
-    def __getitem__(self, i):
-        return self.items[i]
+    def __getitem__(self, index):
+        """
+        Get the item at a given index.
+
+        If `index` is a slice, you will get back that slice of items. If it's
+        the slice [:], exactly the same object is returned. (If you want an
+        independent copy of an OrderedSet, use `OrderedSet.copy()`.)
+
+        If `index` is an iterable, you'll get the OrderedSet of items
+        corresponding to those indices. This is similar to NumPy's
+        "fancy indexing".
+        """
+        if isinstance(index, slice) and index == SLICE_ALL:
+            return self
+        elif is_iterable(index):
+            return LabelSet([self.items[i] for i in index])
+        elif hasattr(index, '__index__') or isinstance(index, slice):
+            result = self.items[index]
+            if isinstance(result, list):
+                return LabelSet(result)
+            else:
+                return result
+        else:
+            raise TypeError("Don't know how to index an OrderedSet by %r" %
+                            index)
 
     def __repr__(self):
         if len(self) < 10:
@@ -119,6 +159,9 @@ class SparseEntryStorage(object):
         self.labels = LabelSet()
         self.entries = defaultdict(float)
         self.total_weight = 0.
+
+    def add_entry(self, entry):
+        self.add_entries([entry])
 
     def add_entries(self, entries):
         """
@@ -255,8 +298,25 @@ class AssocSpace(object):
 
         See from_matrix() for optional arguments.
         """
+        sparse = SparseEntryStorage()
+        sparse.add_entries(entries)
+        return cls.from_sparse_storage(sparse, **kwargs)
+
+    @classmethod
+    def from_sparse_storage(cls, sparse, **kwargs):
+        """
+        Build an AssocSpace from a pre-built SparseEntryStorage bucket.
+        """
+        matrix, labels, weight = sparse.get_matrix_and_metadata()
+        return cls.from_matrix(matrix, labels, **kwargs)
+
+    @classmethod
+    def from_tab_separated(cls, filename, **kwargs):
         bucket = SparseEntryStorage()
-        bucket.add_entries(entries)
+        for line in open(filename, encoding='utf-8'):
+            row_label, col_label, value = line.split('\t')
+            value = float(value)
+            bucket.add_entry((value, row_label, col_label))
         matrix, labels, weight = bucket.get_matrix_and_metadata()
         return cls.from_matrix(matrix, labels, **kwargs)
 
@@ -406,40 +466,12 @@ class AssocSpace(object):
         u, s = eigenmath.redecompose(np.vstack(rows), self.sigma)
         return self.__class__(u, s, labels)
 
-    def merge_similar(self, others, weights=None):
-        '''
-        Construct a new AssocSpace formed by merging this one with another,
-        assuming that the spaces were built from subsamples of the same set
-        of data.
-        '''
-        if weights is None:
-            weights = (1.0,) * (len(others) + 1)
-        merged_labels, index_lists = self.labels.merge_many(
-            [other.labels for other in others]
-        )
-        self_expanded = np.zeros((len(merged_labels), self.k))
-        self_expanded[:self.u.shape[0], :] = self.u
-
-        decompositions = [(self_expanded, self.sigma * weights[0])]
-
-        for other, indices, weight in zip(others, index_lists, weights[:1]):
-            other_expanded = np.zeros((len(merged_labels), other.k))
-            other_expanded[indices, :] = other.u * weight
-            decompositions.append((other_expanded, other.sigma * weight))
-
-        new_u, new_sigma = eigenmath.combine_similar_eigenspaces(
-            decompositions, self.k
-        )
-
-    def merge_dissimilar(self, other, weights=(1.0, 1.0)):
+    def merged_with(self, other, weights=(1.0, 1.0)):
         '''
         Construct a new AssocSpace formed by merging this one with another.
         The two matrices can come from different sets of data.
         The result approximates the sum of the underlying associations from
         the two spaces, using the dimensionality of this space.
-
-        If the two matrices contain entries sampled randomly from a more
-        complete matrix, consider using `merge_similar`, which is simpler.
 
         By default the largest eigenvalue of each space is normalized to 1.0
         before merging.  This normalization can be changed by passing the
@@ -455,7 +487,7 @@ class AssocSpace(object):
         self_weight, other_weight = weights
 
         # The largest eigenvalue is already normalized to 1 by the constructor
-        new_u, new_sigma = eigenmath.combine_dissimilar_eigenspaces(
+        new_u, new_sigma = eigenmath.combine_eigenspaces(
             [(self_expanded, self.sigma * self_weight),
              (other_expanded, other.sigma * other_weight)],
             self.k
