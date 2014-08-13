@@ -346,6 +346,7 @@ class AssocSpace(object):
           * labels.txt
           * assoc.npy (redundant but saved for speed; only if save_assoc is True)
         """
+        os.makedirs(directory, exist_ok=True)
         np.save(os.path.join(directory, 'u.npy'), self.u)
         np.save(os.path.join(directory, 'sigma.npy'), self.sigma)
         if save_assoc:
