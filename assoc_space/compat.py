@@ -13,6 +13,7 @@ if sys.version_info.major == 2:
     izip = itertools.izip
     zip = zip
     FileNotFoundError = IOError
+    basestring = basestring
 else:
     range = range
     iteritems = lambda d: d.items()
@@ -20,3 +21,4 @@ else:
     izip = zip
     zip = lambda *x: list(izip(*x))
     FileNotFoundError = FileNotFoundError
+    basestring = str

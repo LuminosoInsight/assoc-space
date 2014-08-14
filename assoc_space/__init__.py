@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from . import eigenmath
-from .compat import values, izip, zip, FileNotFoundError
+from .compat import values, izip, zip, basestring, FileNotFoundError
 from .util import lazy_property
 
 SLICE_ALL = slice(None)
@@ -29,9 +29,6 @@ def is_iterable(obj):
     return hasattr(obj, '__iter__') and not isinstance(obj, str)
 
 
-# A version of ordered_set.OrderedSet specialized to our purposes.  It eschews
-# some of the type checking that we don't use, and includes code which defers
-# creating the labels-to-indices dict until required.
 class LabelSet(object):
     """
     Set of (unique) labels for an external sequence (such as a matrix).
@@ -39,6 +36,10 @@ class LabelSet(object):
     The interface is a blend of the list interface and the set interface; for
     example, index() returns the index of an item, but the method to add a new
     item is add(), to emphasize that the new item may already be in the set.
+
+    This code is derived from another Luminoso package called `ordered_set`
+    (https://github.com/LuminosoInsight/ordered-set), but it's more
+    specialized, and more efficient for the purposes of this code.
     """
 
     def __init__(self, items=None):
@@ -403,7 +404,7 @@ class AssocSpace(object):
                 result += self._row_cache[term] * weight
         return eigenmath.normalize(result * np.exp(self.sigma / 2))
 
-    def terms_similar_to_vector(self, vec, sorted=True):
+    def terms_similar_to_vector(self, vec, sorted=True, filter=None):
         """
         Find the terms most similar to the given vector, returning a list of
         (term, similarity) tuples in descending order of similarity.  (Set
@@ -412,7 +413,76 @@ class AssocSpace(object):
         similarity = zip(self.labels, np.dot(self.assoc, vec))
         if sorted:
             similarity.sort(key=lambda x: x[1], reverse=True)
+        if filter is not None:
+            similarity = [item for item in similarity if filter(item[0])]
         return similarity
+
+    def show_similar(self, obj, num=20, filter=None):
+        """
+        Show a tabular list of the terms that are most similar to the given
+        object. The object will be run through :func:`AssocSpace.to_vector`,
+        to convert a term or list of weighted terms into a vector if necessary.
+        """
+        self.show_similar_to_vector(self.to_vector(obj), num, filter)
+
+    def show_similar_to_vector(self, vec, num=20, filter=None, include_neg=False):
+        results = self.terms_similar_to_vector(vec, filter=filter)
+        for term, weight in results[:num]:
+            print("%-20s\t%+6.6f" % (term, weight))
+        if include_neg:
+            print()
+            for term, weight in results[-num:]:
+                print("%-20s\t%+6.6f" % (term, weight))
+
+    def to_vector(self, obj):
+        """
+        Make a vector out of various kinds of objects.
+
+        - If the input is a string, it will consider it to be a term, and look
+          up the matrix row that is labeled with that term.
+        - If the input is an iterable (such as a list or set), it will consider
+          it to be a collection of (term, weight) tuples, and look up the
+          weighted average of those terms.
+        - If the input is a NumPy array, it will be treated as a vector, which
+          will be returned unchanged.
+        """
+        if isinstance(obj, np.array):
+            return obj
+        elif isinstance(obj, basestring):
+            return self.row_named(obj)
+        elif is_iterable(obj):
+            return self.vector_from_terms(obj)
+
+    def axis(self, i):
+        """
+        Construct an axis-aligned vector. This vector will have a value of 1 on
+        axis `i`, and 0 on all other axes. (You can, of course, negate the
+        return value of this method to get the negative side of the axis.)
+        """
+        vec = np.zeros(self.k)
+        vec[i] = 1
+        return vec
+
+    def show_axes(self, num_axes=10, num_items=10):
+        """
+        For diagnostic purposes, it can be useful to look at the extreme terms
+        on every axis. This function will show you the extremes of the top
+        `num` axes.
+
+        It's easy to assign more significance to the extremes of an axis than
+        they should have. There is nothing particularly fundamental about
+        axis-aligned clusters that makes them more significant than other
+        clusters, for example; they're just easier to notice.
+
+        This also masks the fact that there will be important but non-extreme
+        things going on in the middle of each axis.
+        """
+        for axis in range(num_axes):
+            print("\nAxis %d" % axis)
+            self.show_similar_to_vector(
+                self.axis(axis), num_items, include_neg=True
+            )
+            print()
 
     def assoc_between_two_terms(self, term1, term2):
         """
