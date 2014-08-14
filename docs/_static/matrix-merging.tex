@@ -1,0 +1,46 @@
+\documentclass[english]{article}
+\usepackage{geometry}
+\geometry{verbose,letterpaper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in,headheight=0in,headsep=0.5in,footskip=0.3in}
+
+\begin{document}
+
+To merge a domain assoc space with the background space, we use an adaptation of the algorithm from Brand 2006\footnote{http://www.merl.com/publications/docs/TR2006-059.pdf}.  Here I try to explain the adaptation in (relatively) plain English.
+
+We are given two matrices $X$ and $Y$ in the form of eigenvalue decompositions $X = U_X S_X {U_X}^T$ and $Y = U_Y S_Y {U_Y}^T$; we want the eigenvalue decomposition of $X + Y$.  In practice $X + Y$ has large dimension, but $U_X$ and $U_Y$ are ``tall and thin'' (that is, have few columns).  The key insight is that the eigenvalue decomposition of $X + Y$ can be computed in the low-dimensional subspace spanned by $U_X$ and $U_Y$.
+
+We proceed as follows.
+
+\begin{enumerate}
+
+\item Obtain an orthogonal basis for the combined column spaces of $U_X$ and $U_Y$.  In practice we do this by computing $U_Y - U_X {U_X}^T U_Y$, which is the component of $U_Y$ acting in the subspace orthogonal to $U_X$, and applying QR decomposition:
+\begin{equation}\label{QR} U_Y - U_X {U_X}^T U_Y = Q R \end{equation}
+$Q$ is guaranteed to be orthogonal.  $U_X$ and $Q$ together then span the column spaces of $U_X$ and $U_Y$.
+
+\item Express $U_X$ and $U_Y$ in this new orthogonal basis.  The components of $U_X$ are easy; they are the identity in the $U_X$ part of the basis and zero in the $Q$ part.  The components of $U_Y$ are ${U_X}^T U_Y$ and $R$, as seen by a trivial rearrangement of the above:
+\[U_Y = U_X {U_X}^T U_Y + Q R\]
+
+The combined basis can be written using a single matrix
+\[\left[\begin{array}{cc} U_X & Q\end{array}\right]\]
+with the above relations summarized as
+\[U_X = \left[\begin{array}{cc} U_X & Q\end{array}\right] \left[\begin{array}{c} I \\ 0\end{array}\right]\]
+\[U_Y = \left[\begin{array}{cc} U_X & Q\end{array}\right] \left[\begin{array}{c} {U_X}^T U_Y \\ R\end{array}\right]\]
+
+\item Express the desired matrix $X + Y$ in the basis $\left[\begin{array}{cc} U_X & Q\end{array}\right]$.  Inserting the expressions for $U_X$ and $U_Y$ into the given decompositions,
+\[X = \left[\begin{array}{cc} U_X & Q\end{array}\right] \left[\begin{array}{cc} S_X & 0 \\ 0 & 0\end{array}\right] \left[\begin{array}{cc} U_X & Q\end{array}\right]^T\]
+\[Y = \left[\begin{array}{cc} U_X & Q\end{array}\right] \left[\begin{array}{c} {U_X}^T U_Y \\ R\end{array}\right] S_Y  \left[\begin{array}{c} {U_X}^T U_Y \\ R\end{array}\right]^T \left[\begin{array}{cc} U_X & Q\end{array}\right]^T\]
+So
+\[X + Y = \left[\begin{array}{cc} U_X & Q\end{array}\right] K \left[\begin{array}{cc} U_X & Q\end{array}\right]^T\]
+where $K$, the expression of $X + Y$ in the newly constructed basis, is
+\begin{equation}\label{K} K = \left[\begin{array}{cc} S_X & 0 \\ 0 & 0\end{array}\right] + \left[\begin{array}{c} {U_X}^T U_Y \\ R\end{array}\right] S_Y  \left[\begin{array}{c} {U_X}^T U_Y \\ R\end{array}\right]^T \end{equation}
+
+\item Compute the eigenvalue decomposition of $K$.  (Note that $K$ is symmetric by construction.)  This is easy because $K$ has dimension equal to the total number of columns in $U_X$ and $U_Y$, which is small.
+\begin{equation} \label{decomp} K = U' S' U'^T \end{equation}
+$S'$ is, by construction, the matrix of eigenvalues of $X + Y$.
+
+\item Find the new eigenbasis, which is simply a matter of inserting the decomposition of $K$ into the previous formula:
+\begin{equation} \label{result} X + Y = \left(\left[\begin{array}{cc} U_X & Q\end{array}\right] U'\right) S' \left(\left[\begin{array}{cc} U_X & Q\end{array}\right] U'\right)^T \end{equation}
+The eigenbasis is properly column-normalized so long as $U_X$ and $Q$ are.  (Remember that $U_X$ and $Q$ are orthogonal by construction.)
+
+\end{enumerate}
+
+\end{document}
