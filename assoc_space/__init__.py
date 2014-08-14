@@ -489,8 +489,8 @@ class AssocSpace(object):
 
         # The largest eigenvalue is already normalized to 1 by the constructor
         new_u, new_sigma = eigenmath.combine_eigenspaces(
-            [(self_expanded, self.sigma * self_weight),
-             (other_expanded, other.sigma * other_weight)],
+            self_expanded, self.sigma * self_weight,
+            other_expanded, other.sigma * other_weight,
             self.k
         )
 

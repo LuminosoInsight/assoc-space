@@ -100,7 +100,7 @@ def test_combine_dissimilar_eigenspaces():
     s2 = np.asarray([1.0, 0.5])
 
     # The combined decomposition
-    u_c, s_c = combine_eigenspaces([(u1, s1), (u2, s2)], 3)
+    u_c, s_c = combine_eigenspaces(u1, s1, u2, s2, 3)
 
     # The decomposition of the sum of the matrices
     s_ref, u_ref = np.linalg.eigh(undecompose(u1, s1) + undecompose(u2, s2))

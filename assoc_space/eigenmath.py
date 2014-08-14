@@ -67,7 +67,7 @@ def eigensystem(mat, k, strip_a0=False):
     return U, S
 
 
-def combine_eigenspaces(decompositions, rank):
+def combine_eigenspaces(U_X, S_X, U_Y, S_Y, rank):
     '''
     Given the eigenvalue decompositions of X and Y, find that of (X + Y).
 
@@ -78,9 +78,9 @@ def combine_eigenspaces(decompositions, rank):
 
     Inputs:
 
-    - decompositions, which is a list of (U, S) for the two input
-      matrices. That is, the list should contain [(U_X, S_X), (U_Y, S_Y)].
-    - rank, the number of dimensions to trim the result to.
+    - U_X, S_X: the decomposition of matrix X.
+    - U_Y, S_Y: the decomposition of matrix Y.
+    - rank: the number of dimensions to trim the result to.
 
     Returns: the new decomposition U, S.
 
@@ -89,9 +89,6 @@ def combine_eigenspaces(decompositions, rank):
 
     [1] http://www.merl.com/publications/docs/TR2006-059.pdf
     '''
-    assert len(decompositions) == 2, "Can only combine two eigenspaces at a time"
-    U_X, S_X = decompositions[0]
-    U_Y, S_Y = decompositions[1]
 
     # Find the basis for the orthogonal component of U_Y
     M_1 = U_X.T.dot(U_Y)
