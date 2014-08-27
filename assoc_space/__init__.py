@@ -325,12 +325,12 @@ class AssocSpace(object):
     def assoc(self):
         """
         The spectrally associated matrix, i.e. U e^(S/2) row-normalized.
+
+        This matrix is like U, but the dot products of its rows represent
+        spreading activation instead of direct similarity. The highest
+        dot products in .assoc are nodes that can reach each other through
+        many short paths.
         """
-        # S/2, you say?  Why?
-        # For a full explanation, see the math documentation on braindump.
-        # The short version: when we generate vectors for two things and dot
-        # them together, both of them will have an e^(S/2) in them, meaning
-        # that between them they have the full e^S.
         unnormalized = np.multiply(self.u, np.exp(self.sigma / 2))
         return eigenmath.normalize_rows(unnormalized, offset=1e-4)
 
@@ -446,7 +446,7 @@ class AssocSpace(object):
         - If the input is a NumPy array, it will be treated as a vector, which
           will be returned unchanged.
         """
-        if isinstance(obj, np.array):
+        if isinstance(obj, np.ndarray):
             return obj
         elif isinstance(obj, basestring):
             return self.row_named(obj)
@@ -584,9 +584,8 @@ class AssocSpace(object):
 
     def normalize_out(self, vector):
         """
-        Makes a new AssocSpace orthogonal to a given vector, by
-        removing the component corresponding to that vector from every
-        row of the space.
+        Makes a new AssocSpace orthogonal to a given vector, by removing the
+        component corresponding to that vector from every row of the space.
         """
         vector = eigenmath.normalize(vector)
         magnitudes = np.dot(self.u, vector)
