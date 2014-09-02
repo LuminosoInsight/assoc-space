@@ -78,7 +78,7 @@ class LabelSet(object):
         "fancy indexing".
         """
         if isinstance(index, slice) and index == SLICE_ALL:
-            return self
+            return self.copy()
         elif is_iterable(index):
             return LabelSet([self.items[i] for i in index])
         elif hasattr(index, '__index__') or isinstance(index, slice):
@@ -173,7 +173,7 @@ class SparseEntryStorage(object):
             self.entries[(row, col)] += value
             self.total_weight += abs(value)
 
-    def get_matrix_and_metadata(self):
+    def get_matrix_and_labels(self):
         """
         Create a symmetric SciPy matrix from the entries that have been stored
         here.
@@ -196,7 +196,7 @@ class SparseEntryStorage(object):
             size = len(self.labels)
             matrix = coo_matrix((data, indices), shape=(size, size))
 
-        return matrix + matrix.T, self.labels, self.total_weight
+        return matrix + matrix.T, self.labels
 
 
 class AssocSpace(object):
@@ -248,7 +248,7 @@ class AssocSpace(object):
 
     @classmethod
     def from_matrix(cls, matrix, labels, k, offset_weight=8e-6,
-                    matrix_sum=None, strip_a0=True, normalize_gm=True):
+                    strip_a0=True, normalize_gm=True):
         '''
         Build an AssocSpace from a SciPy sparse matrix and a LabelSet.
 
@@ -269,9 +269,8 @@ class AssocSpace(object):
         if not labels:
             return None
 
-        if matrix_sum is None:
-            sums = matrix.sum(0)
-            matrix_sum = np.sum(sums)
+        sums = matrix.sum(0)
+        matrix_sum = np.sum(sums)
 
         logger.info('Building space with k=%d (sum=%.6f).' % (k, matrix_sum))
 
@@ -308,7 +307,7 @@ class AssocSpace(object):
         """
         Build an AssocSpace from a pre-built SparseEntryStorage bucket.
         """
-        matrix, labels, weight = sparse.get_matrix_and_metadata()
+        matrix, labels = sparse.get_matrix_and_labels()
         return cls.from_matrix(matrix, labels, **kwargs)
 
     @classmethod
@@ -318,7 +317,7 @@ class AssocSpace(object):
             row_label, col_label, value = line.split('\t')
             value = float(value)
             bucket.add_entry((value, row_label, col_label))
-        matrix, labels, weight = bucket.get_matrix_and_metadata()
+        matrix, labels = bucket.get_matrix_and_labels()
         return cls.from_matrix(matrix, labels, **kwargs)
 
     @lazy_property

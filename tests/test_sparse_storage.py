@@ -21,16 +21,14 @@ def test_sparse_storage():
     bucket = SparseEntryStorage()
 
     # Getting labels and matrix from an empty storage bucket does not crash
-    matrix, labels, matrix_sum = bucket.get_matrix_and_metadata()
+    matrix, labels = bucket.get_matrix_and_labels()
     eq_(len(labels), 0)
     eq_(matrix.shape, (0, 0))
-    eq_(matrix_sum, 0.0)
 
     # Actually add some things and check again
     bucket.add_entries(ENTRIES)
-    matrix, labels, matrix_sum = bucket.get_matrix_and_metadata()
+    matrix, labels = bucket.get_matrix_and_labels()
     eq_(' '.join(labels), 'apple red green celery orange banana yellow lemon')
     eq_(matrix[0, 1], 4)
     eq_(matrix[6, 5], 1)
     eq_(matrix[4, 2], 0)
-    assert abs(matrix_sum - 15.3) < .000001
