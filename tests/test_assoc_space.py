@@ -137,9 +137,12 @@ def test_merging():
     assoc1 = AssocSpace.from_entries(ENTRIES, k=4)
     assoc2 = AssocSpace.from_entries(MORE_ENTRIES, k=4)
     merged = assoc1.merged_with(assoc2)
+    eq_(merged.k, 8)
 
     # Check some simple things
+    merged = assoc1.merged_with(assoc2, k=4)
     eq_(merged.k, 4)
+
     eq_(' '.join(merged.labels),
         'apple red green celery orange banana yellow lemon blue tasty ferret')
     assert merged.assoc_between_two_terms('ferret', 'yellow') > 0.5

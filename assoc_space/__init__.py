@@ -542,7 +542,7 @@ class AssocSpace(object):
         u, s = eigenmath.redecompose(np.vstack(rows), self.sigma)
         return self.__class__(u, s, labels)
 
-    def merged_with(self, other, weights=(1.0, 1.0)):
+    def merged_with(self, other, weights=(1.0, 1.0), k=None):
         '''
         Construct a new AssocSpace formed by merging this one with another.
         The two matrices can come from different sets of data.
@@ -562,11 +562,14 @@ class AssocSpace(object):
 
         self_weight, other_weight = weights
 
+        if k is None:
+            k = self.k + other.k
+
         # The largest eigenvalue is already normalized to 1 by the constructor
         new_u, new_sigma = eigenmath.combine_eigenspaces(
             self_expanded, self.sigma * self_weight,
             other_expanded, other.sigma * other_weight,
-            self.k
+            rank=k
         )
 
         return self.__class__(new_u, new_sigma, merged_labels)
