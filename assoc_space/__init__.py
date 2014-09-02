@@ -451,6 +451,12 @@ class AssocSpace(object):
             return self.row_named(obj)
         elif is_iterable(obj):
             return self.vector_from_terms(obj)
+        else:
+            raise TypeError(
+                "I don't know how to convert %s to a vector. "
+                "This method can accept row labels, iterables of row labels "
+                "and weights, or an existing vector."
+            )
 
     def axis(self, i):
         """
