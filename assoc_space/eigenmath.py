@@ -21,11 +21,11 @@ def normalize(vec):
 
 
 def row_norms(mat):
-    return np.sqrt((mat ** 2).sum(axis=1))
+    return np.sqrt((mat * mat).sum(axis=1))
 
 
 def col_norms(mat):
-    return np.sqrt((mat ** 2).sum(axis=0))
+    return np.sqrt((mat * mat).sum(axis=0))
 
 
 def normalize_rows(mat, offset=0.0):
@@ -35,7 +35,7 @@ def normalize_rows(mat, offset=0.0):
     If desired, pass an offset which will be added to the row norms, to cause
     very small rows to stay small in a smooth fashion.
     """
-    return mat / (np.sqrt((mat * mat).sum(1)) + offset)[:, np.newaxis]
+    return mat / (row_norms(mat) + offset)[:, np.newaxis]
 
 
 def eigensystem(mat, k, strip_a0=False):
