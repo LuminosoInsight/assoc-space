@@ -112,6 +112,29 @@ def combine_eigenspaces(U_X, S_X, U_Y, S_Y, rank):
     return np.c_[U_X, Q].dot(Up), Sp         # Eqn. (4)
 
 
+def combine_multiple_eigenspaces(US_list, rank):
+    """
+    Given the eigenvalue decompositions of a list of matrices [X_0, X_1, ...],
+    find the decomposition of their sum X_0 + X_1 + ... .
+
+    The decompositions must have aligned labels; that is, row i of matrix X_m
+    should refer to the same thing as row i of matrix X_n, even if that means
+    the row has to be the zero vector. The `AssocSpace.merged_with`
+    function is a higher-level version that takes care of row alignment.
+
+    Inputs:
+
+    - US_list: a list of tuples (U_n, S_n) that are the decomposition of X_n
+    - rank: the number of dimensions to trim the result to.
+
+    Returns: the new decomposition U, S.
+
+    The algorithm is adapted from Brand 2006 (MERL TR2006-059) [1], section 2,
+    to operate on eigenvalue decompositions instead of SVDs.
+
+    [1] http://www.merl.com/publications/docs/TR2006-059.pdf
+    """
+
 def redecompose(U, S):
     '''
     Given a "decomposition" U S U^T of a matrix X, find its eigenvalue
