@@ -114,8 +114,8 @@ def combine_eigenspaces(U_X, S_X, U_Y, S_Y, rank):
 
 def combine_multiple_eigenspaces(US_list, rank):
     """
-    Given the eigenvalue decompositions of a list of matrices [X_0, X_1, ...],
-    find the decomposition of their sum X_0 + X_1 + ... .
+    Given a list of eigenvalue decompositions of a list of matrices 
+    [X_0, X_1, ...], find the decomposition of their sum X_0 + X_1 + ... .
 
     The decompositions must have aligned labels; that is, row i of matrix X_m
     should refer to the same thing as row i of matrix X_n, even if that means
