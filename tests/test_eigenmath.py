@@ -116,6 +116,49 @@ def test_combine_dissimilar_eigenspaces():
     compare_cols_within_sign(u_c, u_ref[:, :3])
 
 
+def test_combine_multiple_eigenspaces():
+    # This takes three rank 2 decompositions of different matrices and
+    # generates one rank 3 decomposition. That rank 3 decomposition should be
+    # the top 3 dimensions of the sum of the original matrices.
+
+    # The decompositions
+    u1 = np.asarray([[0.5, 0.5],
+                     [0.5, -0.5],
+                     [-0.5, -0.5],
+                     [-0.5, 0.5],
+                     [0.0, 0.0]])
+    s1 = np.asarray([1.0, 0.7])
+    u2 = np.asarray([[0.0, 0.0],
+                     [0.0, 0.0],
+                     [0.0, 0.0],
+                     [-0.8, 0.6],
+                     [0.6, 0.8]])
+    s2 = np.asarray([1.0, 0.5])
+    u3 = np.asarray([[0.0, 0.0],
+                     [0.0, 0.0],
+                     [0.28, 0.96],
+                     [0.0, 0.0],
+                     [0.96, -0.28]])
+    s3 = np.asarray([1.0, 0.3])
+
+    # The combined decomposition
+    u_c, s_c = combine_multiple_eigenspaces([(u1,s1), (u2,s2), (u3,s3)], 3)
+    
+    # The decomposition of the sum of the matrices
+    s_ref, u_ref = np.linalg.eigh(undecompose(u1, s1) +
+                                  undecompose(u2, s2) +
+                                  undecompose(u3, s3))
+
+    # Sort the reference decomposition in decreasing algebraic order, to match
+    # the sorting combine_multiple_eigenspaces() uses
+    order = np.argsort(s_ref)[::-1]
+    s_ref = s_ref[order]
+    u_ref = u_ref[:, order]
+
+    # Check the output
+    assert np.allclose(s_c, s_ref[:3])
+    compare_cols_within_sign(u_c, u_ref[:, :3])
+
 def test_redecompose():
     # This is matrix #1 from the previous test, but with a row missing.
     u_in = np.asarray([[0.5, 0.5],
