@@ -135,6 +135,48 @@ def combine_multiple_eigenspaces(US_list, rank):
     [1] http://www.merl.com/publications/docs/TR2006-059.pdf
     """
 
+    # This is used mainly for making identity and zero matrices of the
+    # right dimension
+    k = US_list[0][0].shape[1]
+
+    # Initialize QR_list; note that Q_0 = U_0 and R_0 = I for consistency
+    QR_list = [(US_list[0][0], np.identity(k))]
+
+    # Calculating each Q requires all the Qs before it; hence the
+    # comprehension within a loop.
+    for (U, S) in US_list[1:]:
+        Q, R = np.linalg.qr(U - [q.dot(q.T) for q, r in QR_list].sum().dot(U))
+        QR_list.append((Q, R))
+
+    # Ugly mess to make sure that everything initializes correctly
+    for i, (U,S) in enumerate(US_list):
+        for j, (Q, R) in enumerate(QR_list):
+            if i == 0 and j == 0:
+                V = R
+            elif j == 0:
+                V = Q.T.dot(U)
+            elif j < i:
+                V = np.r_[V, Q.T.dot(U)]
+            elif j == i:
+                V = np.r_[V, R]
+            elif j > i:
+                V = np.r_[V, np.zeros(k)]
+        if i == 0:
+            K = (V * S).dot(V.T))
+        else:
+            K += (V * S).dot(V.T))
+
+    # Diagonalize
+    Sp, Up = np.linalg.eigh(K)
+
+    # Sort and trim - we do this on the small matrices, for speed
+    order = np.argsort(Sp)[::-1]
+    Sp = Sp[order][:rank]
+    Up = Up[:, order][:, :rank]
+
+    # Done!
+    return np.c_[U_X, Q].dot(Up), Sp
+
 def redecompose(U, S):
     '''
     Given a "decomposition" U S U^T of a matrix X, find its eigenvalue
