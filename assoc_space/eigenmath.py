@@ -175,7 +175,8 @@ def combine_multiple_eigenspaces(US_list, rank):
     Up = Up[:, order][:, :rank]
 
     # Done!
-    return np.c_[U_X, Q].dot(Up), Sp
+
+    return np.concatenate=([Q for Q, R in QR_list], axis=1).dot(Up), Sp
 
 def redecompose(U, S):
     '''
