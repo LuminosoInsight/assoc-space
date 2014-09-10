@@ -114,8 +114,9 @@ def combine_eigenspaces(U_X, S_X, U_Y, S_Y, rank):
 
 def combine_multiple_eigenspaces(US_list, rank):
     """
-    Given a list of eigenvalue decompositions of a list of matrices 
-    [X_0, X_1, ..., X_n], find the decomposition of their sum X_0 + X_1 + ... + X_n .
+    Given a list of eigenvalue decompositions of a list of matrices
+    [X_0, X_1, ..., X_n], find the decomposition of their sum
+    X_0 + X_1 + ... + X_n .
 
     The decompositions must have aligned labels; that is, row r of matrix X_i
     should refer to the same thing as row r of matrix X_j, even if that means
@@ -137,16 +138,16 @@ def combine_multiple_eigenspaces(US_list, rank):
 
     # These are used mainly for making identity and zero matrices of the
     # right dimension
-    l = US_list[0][0].shape[0] # l is the "long" side of our decompositions
-    k = US_list[0][0].shape[1] # k is our "thin" dimension, usually 150
-    n = len(US_list) # n is the number of decompositions
+    l = US_list[0][0].shape[0]  # l is the "long" side of our decompositions
+    k = US_list[0][0].shape[1]  # k is our "thin" dimension, usually 150
+    n = len(US_list)  # n is the number of decompositions
 
     # Initialize QR_list; note that Q_0 = U_0 and R_0 = I for consistency
     QR_list = [(US_list[0][0], np.identity(k))]
 
     # Calculating each Q requires all the Qs before it; hence the
     # comprehension within a loop.
-    M_sum = np.zeros((l,l))
+    M_sum = np.zeros((l, l))
     for (U, S) in US_list[1:]:
         q = QR_list[-1][0]
         M_sum += q.dot(q.T)
@@ -156,7 +157,7 @@ def combine_multiple_eigenspaces(US_list, rank):
     # Construct components of each U in the basis U_1, Q_2, ..., Q_n, and use
     # them to express the sum of the X_i in that basis.
     K = np.zeros((n*k, n*k))
-    for i, (U,S) in enumerate(US_list):
+    for i, (U, S) in enumerate(US_list):
         V_list = []
         for j, (Q, R) in enumerate(QR_list):
             if j < i:
@@ -164,7 +165,7 @@ def combine_multiple_eigenspaces(US_list, rank):
             elif j == i:
                 V_list.append(R)
             else:
-                V_list.append(np.zeros((k,k)))
+                V_list.append(np.zeros((k, k)))
         V = np.concatenate(V_list)
         K += (V * S).dot(V.T)
 
@@ -178,6 +179,7 @@ def combine_multiple_eigenspaces(US_list, rank):
 
     # Done!
     return np.concatenate([Q for Q, R in QR_list], axis=1).dot(Up), Sp
+
 
 def redecompose(U, S):
     '''
