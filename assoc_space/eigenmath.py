@@ -144,7 +144,7 @@ def combine_multiple_eigenspaces(US_list, rank):
 
     # Check to make sure that the columns of U_1 are orthonormal. If not,
     # normalize using QR decomposition. This behavior replaces the redecompose
-    # function. We do this check for speed; the QR decomposition will simply
+    # function. We do this check for speed; the QR decomposition will work
     # even if the columns are orthonormal.
     U_1 = US_list[0][0]
     I = np.identity(k)
