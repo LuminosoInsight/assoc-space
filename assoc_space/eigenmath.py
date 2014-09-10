@@ -145,8 +145,9 @@ def combine_multiple_eigenspaces(US_list, rank):
     # Initialize QR_list; note that Q_0 = U_0 and R_0 = I for consistency
     QR_list = [(US_list[0][0], np.identity(k))]
 
-    # Calculating each Q requires all the Qs before it; hence the
-    # comprehension within a loop.
+    # Create the basis U_1, Q_2, ..., Q_n, as well as the appropriate R_i.
+    # Each Q_i depends on the sum of Q_j * Q_j^T for all j < i.
+    # We keep track of this in M_sum.
     M_sum = np.zeros((l, l))
     for (U, S) in US_list[1:]:
         q = QR_list[-1][0]
