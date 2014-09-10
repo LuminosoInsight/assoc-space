@@ -8,7 +8,7 @@ To merge a domain assoc space with the background space, we use an adaptation of
 
 We are given two matrices $X$ and $Y$ in the form of eigenvalue decompositions $X = U_X S_X {U_X}^T$ and $Y = U_Y S_Y {U_Y}^T$; we want the eigenvalue decomposition of $X + Y$.  In practice $X + Y$ has large dimension, but $U_X$ and $U_Y$ are ``tall and thin'' (that is, have few columns).  The key insight is that the eigenvalue decomposition of $X + Y$ can be computed in the low-dimensional subspace spanned by $U_X$ and $U_Y$.
 
-We proceed as follows.
+We proceed as follows:
 
 \begin{enumerate}
 
@@ -43,4 +43,70 @@ The eigenbasis is properly column-normalized so long as $U_X$ and $Q$ are.  (Rem
 
 \end{enumerate}
 
+We can adapt this for any number of matrices $X_1 = U_1 S_1 U_1^T, X_2 = U_2 S_2 U_2^T, X_3 = U_3 S_3, U_3^T, \ldots, X_n = U_n S_n U_n^T$. Again, the eigenvalue decomposition of $\sum_{i=0}^n X_i$ can be computed in the low-dimensional subspace spanned by the $U_i$.
+
+\begin{enumerate}
+
+\item Obtain an orthogonal basis for the combined column spaces of the $U_i$. As before, $U_1$ will form the first part of the desired basis, and we can find the contribution from $U_2$ by calculating the QR decomposition.
+
+$$U_2 - U_1U_1^T U_2 = Q_2 R_2$$
+
+That is, we project $U_2$ into the subspace spanned by $U_1$, subtract that from $U_2$, and orthogonalize the result via QR decomposition. This left side of this equation is the component of $U_2$ acting in the subspace orthogonal to $U_1$. $U_1$ and $Q_2$ together span the column spaces of $U_1$ and $U_2$. To obtain the contribution from $U_3$, then, we need to remove both of these:
+
+$$U_3 - (U_1 U_1^T + Q_2 Q_2^T) U_3 = Q_3 R_3$$
+
+Now $U_1$, $Q_2$, and $Q_3$ together span the column spaces of $U_1$, $U_2$, and $U_3$. Extending this, we can find the component of $U_m$ for $m > 1$ acting in the subspace orthogonal to the subspace spanned by $U_1$, $\ldots$, $U_{m-1}$ and then orthogonalize the result. For notational convenience, we define $Q_1=U_1$. (We will define $R_1=I$ for convenience as well.)
+
+\begin{equation}\label{QR multiple}U_m - \left(\sum_{i=1}^{m-1} Q_i Q_i^T\right) U_m = Q_m R_m\end{equation}
+
+Then $U_1,Q_2,\ldots,Q_n$ together form an orthonormal basis for the combined column spaces of the $U_i$.
+
+\item Express the $U_i$ in this new orthogonal basis. The components of $U_1$ are easy; they are the identity on the $U_1$ part of the basis and zero on all of the $Q_2,\ldots,Q_n$ parts. The components of $U_2$ are $U_1^T U_2$ on the $U_1$ part of the basis, $R_2$ on the $Q_2$ part of the basis, and zero on all of the $Q_3,\ldots,Q_n$ parts. We can see this by rearranging our equation for $Q_2 R_2$.
+
+$$U_2 = U_1 U_1^T U_2 + Q_2 R_2$$
+
+Furthermore, the components of $U_3$ are $U_1^T U_3$, $Q_2^T U_3$, and $R_3$ on the first three parts of our orthogonal basis, respectively, and zero on all the other parts. This is once again seen by rearranging our equation for $Q_3 R_3$.
+
+$$U_3 = U_1 U_1^T U_3 + Q_2 Q_2^T U_3 + Q_3 R_3 $$
+
+For $U_m$, $m > 1$, then, we can find the components of the appropriate part of the basis by rearranging the equation for $U_m$, once again naming $Q_1 = U_1$ for convenience.
+
+$$U_m = \sum_{i=1}^{m-1}Q_i Q_i^T U_m + Q_m R_m$$
+
+This tells us that the components of $U_m$ on the $Q_i$ part of the basis for $i < m$ are given by $Q_i^T U_m$, the components of $U_m$ on the $Q_m$ part of the basis are $R_m$, and the components on the $Q_i$ part of the basis for $i > m$ are zero.
+
+We can then express the $U_i$ in terms of the basis $\left[\begin{array}{cccccc} U_1 & Q_2 & Q_3 & Q_4 & \ldots & Q_n\end{array}\right]$ as follows:
+
+$$U_1 = \left[\begin{array}{cccccc} U_1 & Q_2 & Q_3 & Q_4 & \ldots & Q_n\end{array}\right] \left[\begin{array}{c} I \\ 0 \\ 0 \\ 0\\ \vdots \\ 0\end{array}\right]$$
+$$U_2 = \left[\begin{array}{cccccc} U_1 & Q_2 & Q_3 & Q_4 &\ldots & Q_n\end{array}\right] \left[\begin{array}{c} U_1^T U_2 \\ R_2 \\ 0 \\ 0 \\ \vdots \\ 0 \end{array}\right]$$
+$$U_3 = \left[\begin{array}{cccccc} U_1 & Q_2 & Q_3 & Q_4 &\ldots & Q_n\end{array}\right] \left[\begin{array}{c} U_1^T U_3 \\ Q_2^T U_3 \\ R_3 \\ 0 \\ \vdots \\ 0 \end{array}\right]$$
+$$U_m = \left[\begin{array}{cccccccc} U_1 & Q_2 & \ldots & Q_{m-1} & Q_m & Q_{m+1} & \ldots & Q_n\end{array}\right] \left[\begin{array}{c} U_1^T U_m \\ Q_2^T U_m \\ \vdots \\ Q_{m-1}^T U_m \\ R_m \\ 0 \\ \vdots \\ 0 \end{array}\right]$$
+
+\item Express the desired sum $\sum_{i=1}^n X_i$ in the basis $B = \left[\begin{array}{cccccc} U_1 & Q_2 & Q_3 & Q_4 & \ldots & Q_n\end{array}\right]$. Inserting the expressions for the $U_i$ into the given decompositions:
+
+$$X_1 = B \left[\begin{array}{c} I \\ 0 \\ 0 \\ 0\\ \vdots \\ 0\end{array}\right] S_1 \left[\begin{array}{c} I \\ 0 \\ 0 \\ 0\\ \vdots \\ 0\end{array}\right]^T  B^T$$
+$$X_2 = B \left[\begin{array}{c} U_1^T U_2 \\ R_2 \\ 0 \\ 0 \\ \vdots \\ 0 \end{array}\right] S_2 \left[\begin{array}{c} U_1^T U_2 \\ R_2 \\ 0 \\ 0 \\ \vdots \\ 0 \end{array}\right]^T B^T$$
+$$X_3 = B \left[\begin{array}{c} U_1^T U_3 \\ Q_2^T U_3 \\ R_3 \\ 0 \\ \vdots \\ 0 \end{array}\right] S_3 \left[\begin{array}{c} U_1^T U_3 \\ Q_2^T U_3 \\ R_3 \\ 0 \\ \vdots \\ 0 \end{array}\right]^T B^T$$
+$$X_m = B \left[\begin{array}{c} U_1^T U_m \\ Q_2^T U_m \\ \vdots \\ Q_{m-1}^T U_m \\ R_m \\ 0 \\ \vdots \\ 0 \end{array}\right] S_m \left[\begin{array}{c} U_1^T U_m \\ Q_2^T U_m \\ \vdots \\ Q_{m-1}^T U_m \\ R_m \\ 0 \\ \vdots \\ 0 \end{array}\right]^T B^T$$
+
+We can then factor out $B$ and $B^T$ to get the following:
+
+$$\sum_{i=1}^n X_i = B K B^T$$
+
+where $K$, the expression of $\sum_{i=1}^n X_i$ in $B$, is
+
+\begin{equation}\label{K multiple} K = \sum_{i=1}^n \left[\begin{array}{c} U_1^T U_i \\ Q_2^T U_i \\ \vdots \\ Q_{i-1}^T U_i \\ R_i \\ 0 \\ \vdots \\ 0 \end{array}\right] S_i \left[\begin{array}{c} U_1^T U_i \\ Q_2^T U_i \\ \vdots \\ Q_{i-1}^T U_i \\ R_i \\ 0 \\ \vdots \\ 0 \end{array}\right]^T \end{equation}
+
+Here we are once again naming $Q_1 = U_1$ and $R_1 = I$.
+
+\item Compute the eigenvalue decomposition of $K$. (Note that $K$ is symmetric by construction.) This is easy because $K$ has dimension equal to the total number of columns in the $U_i$, which is relatively small.
+\begin{equation} \label{decomp multiple} K = U' S' U'^T \end{equation}
+
+$S'$ is, by construction, the matrix of eigenvalues of $\sum_{i=1}^n X_i$.
+
+\item Find the new eigenbasis, which is simply a matter of inserting the decomposition of $K$ into the previous formula.
+\begin{equation}\label{result multiple} \sum_{i=1}^n X_i = B U' S' (B U')^T\end{equation}
+
+The eigenbasis is properly column-normalized so long as $U_1$ and the $Q_i$ are. (Remember that $U_1$ and the $Q_i$ are orthogonal by construction.)
+\end{enumerate}
 \end{document}
