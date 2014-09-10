@@ -135,8 +135,9 @@ def combine_multiple_eigenspaces(US_list, rank):
     [1] http://www.merl.com/publications/docs/TR2006-059.pdf
     """
 
-    # This is used mainly for making identity and zero matrices of the
+    # These are used mainly for making identity and zero matrices of the
     # right dimension
+    n = US_list[0][0].shape[0]
     k = US_list[0][0].shape[1]
 
     # Initialize QR_list; note that Q_0 = U_0 and R_0 = I for consistency
@@ -144,8 +145,11 @@ def combine_multiple_eigenspaces(US_list, rank):
 
     # Calculating each Q requires all the Qs before it; hence the
     # comprehension within a loop.
+    M_sum = np.zeros((n,n))
     for (U, S) in US_list[1:]:
-        Q, R = np.linalg.qr(U - [q.dot(q.T) for q, r in QR_list].sum().dot(U))
+        q = QR_list[-1][0]
+        M_sum += q.dot(q.T)
+        Q, R = np.linalg.qr(M_sum.dot(U))
         QR_list.append((Q, R))
 
     # Ugly mess to make sure that everything initializes correctly
@@ -160,11 +164,11 @@ def combine_multiple_eigenspaces(US_list, rank):
             elif j == i:
                 V = np.r_[V, R]
             elif j > i:
-                V = np.r_[V, np.zeros(k)]
+                V = np.r_[V, np.zeros((k, k))]
         if i == 0:
-            K = (V * S).dot(V.T))
+            K = (V * S).dot(V.T)
         else:
-            K += (V * S).dot(V.T))
+            K += (V * S).dot(V.T)
 
     # Diagonalize
     Sp, Up = np.linalg.eigh(K)
@@ -175,8 +179,7 @@ def combine_multiple_eigenspaces(US_list, rank):
     Up = Up[:, order][:, :rank]
 
     # Done!
-
-    return np.concatenate=([Q for Q, R in QR_list], axis=1).dot(Up), Sp
+    return np.concatenate([Q for Q, R in QR_list], axis=1).dot(Up), Sp
 
 def redecompose(U, S):
     '''
