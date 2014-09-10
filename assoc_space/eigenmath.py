@@ -124,7 +124,7 @@ def combine_multiple_eigenspaces(US_list, rank):
 
     Inputs:
 
-    - US_list: a list of tuples (U_n, S_n) that are the decomposition of X_n
+    - US_list: a list of tuples (U_i, S_i) that are the decomposition of X_i
     - rank: the number of dimensions to trim the result to.
 
     Returns: the new decomposition U, S.
@@ -149,22 +149,20 @@ def combine_multiple_eigenspaces(US_list, rank):
     for (U, S) in US_list[1:]:
         q = QR_list[-1][0]
         M_sum += q.dot(q.T)
-        Q, R = np.linalg.qr(M_sum.dot(U))
+        Q, R = np.linalg.qr(U - M_sum.dot(U))
         QR_list.append((Q, R))
 
-    # Ugly mess to make sure that everything initializes correctly
+    # Construct components of each U in the basis U_1, Q_2, ...
     for i, (U,S) in enumerate(US_list):
+        V_list = []
         for j, (Q, R) in enumerate(QR_list):
-            if i == 0 and j == 0:
-                V = R
-            elif j == 0:
-                V = Q.T.dot(U)
-            elif j < i:
-                V = np.r_[V, Q.T.dot(U)]
+            if j < i:
+                V_list.append(Q.T.dot(U))
             elif j == i:
-                V = np.r_[V, R]
+                V_list.append(R)
             elif j > i:
-                V = np.r_[V, np.zeros((k, k))]
+                V_list.append(np.zeros((k,k)))
+        V = np.concatenate(V_list)
         if i == 0:
             K = (V * S).dot(V.T)
         else:
