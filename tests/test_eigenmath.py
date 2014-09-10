@@ -143,7 +143,7 @@ def test_combine_multiple_eigenspaces():
 
     # The combined decomposition
     u_c, s_c = combine_multiple_eigenspaces([(u1, s1), (u2, s2), (u3, s3)], 3)
-    
+
     # The decomposition of the sum of the matrices
     s_ref, u_ref = np.linalg.eigh(undecompose(u1, s1) +
                                   undecompose(u2, s2) +
@@ -159,11 +159,25 @@ def test_combine_multiple_eigenspaces():
     assert np.allclose(s_c, s_ref[:3])
     compare_cols_within_sign(u_c, u_ref[:, :3])
 
-    # Check to make sure that the results agree when n = 2
+    # Check to make sure that the results agree with combine_eigenspaces
+    # when n = 2
     u_c, s_c = combine_multiple_eigenspaces([(u1, s1), (u2, s2)], 3)
     u_ref, s_ref = combine_eigenspaces(u1, s1, u2, s2, 3)
     assert np.allclose(s_c, s_ref)
     compare_cols_within_sign(u_c, u_ref)
+
+    # Check to make sure the results agree with redecompose when n = 1
+    # This is matrix #1 from the previous test, but with a row missing.
+    u_in = np.asarray([[0.5, 0.5],
+                       [0.5, -0.5],
+                       [-0.5, 0.5],
+                       [0.0, 0.0]])
+    s_in = np.asarray([1.0, 0.7])
+
+    u_out, s_out = redecompose(u_in, s_in)
+    u_c, s_c = combine_multiple_eigenspaces([(u_in, s_in)], 2)
+    assert np.allclose(s_out, s_c)
+    compare_cols_within_sign(u_out, u_c)
 
 
 def test_redecompose():
