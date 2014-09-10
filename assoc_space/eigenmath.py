@@ -142,10 +142,18 @@ def combine_multiple_eigenspaces(US_list, rank):
     k = US_list[0][0].shape[1]  # k is our "thin" dimension, usually 150
     n = len(US_list)  # n is the number of decompositions
 
-    # Initialize QR_list; note that Q_0 = U_0 and R_0 = I for consistency
-    QR_list = [(US_list[0][0], np.identity(k))]
+    # Check to make sure that the columns of U_1 are orthonormal. If not,
+    # normalize using QR decomposition. This behavior replaces the redecompose
+    # function. We do this check for speed; the QR decomposition will simply
+    # even if the columns are orthonormal.
+    U_1 = US_list[0][0]
+    I = np.identity(k)
+    if np.allclose(U_1.T.dot(U_1), I):
+        QR_list = [(U_1, I)]
+    else:
+        QR_list = [np.linalg.qr(U_1)]
 
-    # Create the basis U_1, Q_2, ..., Q_n, as well as the appropriate R_i.
+    # Create the basis Q_1, ..., Q_n, as well as the appropriate R_i.
     # Each Q_i depends on the sum of Q_j * Q_j^T for all j < i.
     # We keep track of this in M_sum.
     M_sum = np.zeros((l, l))
@@ -155,7 +163,7 @@ def combine_multiple_eigenspaces(US_list, rank):
         Q, R = np.linalg.qr(U - M_sum.dot(U))
         QR_list.append((Q, R))
 
-    # Construct components of each U in the basis U_1, Q_2, ..., Q_n, and use
+    # Construct components of each U in the basis Q_1, ..., Q_n, and use
     # them to express the sum of the X_i in that basis.
     K = np.zeros((n*k, n*k))
     for i, (U, S) in enumerate(US_list):
