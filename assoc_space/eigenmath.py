@@ -142,28 +142,31 @@ def combine_multiple_eigenspaces(US_list, rank):
     k = US_list[0][0].shape[1]  # k is our "thin" dimension, usually 150
     n = len(US_list)  # n is the number of decompositions
 
-    # Check to make sure that the columns of U_1 are orthonormal. If not,
+    # Check to make sure that the columns of U_0 are orthonormal. If not,
     # normalize using QR decomposition. This behavior replaces the redecompose
     # function. We do this check for speed; the QR decomposition will work
     # even if the columns are orthonormal.
-    U_1 = US_list[0][0]
+    U_0 = US_list[0][0]
     I = np.identity(k)
-    if np.allclose(U_1.T.dot(U_1), I):
-        QR_list = [(U_1, I)]
+    if np.allclose(U_0.T.dot(U_0), I):
+        QR_list = [(U_0, I)]
     else:
-        QR_list = [np.linalg.qr(U_1)]
+        QR_list = [np.linalg.qr(U_0)]
 
-    # Create the basis Q_1, ..., Q_n, as well as the appropriate R_i.
-    # Each Q_i depends on the sum of Q_j * Q_j^T for all j < i.
-    # We keep track of this in M_sum.
-    M_sum = np.zeros((l, l))
+    # Create the basis Q_0, ..., Q_{n-1}, as well as the appropriate R_i.
+    # Each Q_i depends on the sum of Q_j * Q_j^T * U_i for all j < i.
+    # We keep track of this in M_sum. There are some performance savings to
+    # be realized here, since we will immediately recompute Q_j^T * U_i below.
+    # However, the only way I could think of to store those is in a four-
+    # dimensional array, and that may be a task for another time.
     for (U, S) in US_list[1:]:
-        q = QR_list[-1][0]
-        M_sum += q.dot(q.T)
-        Q, R = np.linalg.qr(U - M_sum.dot(U))
+        M_sum = np.zeros((l, k))
+        for (Q, R) in QR_list:
+            M_sum += Q.dot(Q.T.dot(U))
+        Q, R = np.linalg.qr(U - M_sum)
         QR_list.append((Q, R))
 
-    # Construct components of each U in the basis Q_1, ..., Q_n, and use
+    # Construct components of each U in the basis Q_0, ..., Q_{n-1}, and use
     # them to express the sum of the X_i in that basis.
     K = np.zeros((n*k, n*k))
     for i, (U, S) in enumerate(US_list):
