@@ -137,15 +137,11 @@ class LabelSet(object):
         merged = self.copy()
         return merged, [merged.add(x) for x in other.items]
 
-    def merge_many(self, others):
-        """
-        Copy this LabelSet, then merge an arbitrary number of LabelSets into
-        the copy. Return the merged labels, and a list of indices for every
-        merged LabelSet, indicating where its items are in the merged result.
-        """
-        merged = self.copy()
-        index_lists = []
-        for other_labels in others:
+    @staticmethod
+    def merge_many(labelsets):
+        merged = labelsets[0].copy()
+        index_lists = [list(range(len(labelsets[0])))]
+        for other_labels in labelsets[1:]:
             index_lists.append([merged.add(x) for x in other_labels.items])
         return merged, index_lists
 
@@ -573,6 +569,31 @@ class AssocSpace(object):
         )
 
         return self.__class__(new_u, new_sigma, merged_labels)
+
+    @classmethod
+    def merge_many(cls, spaces, weights=None, k=None):
+        if k is None:
+            k = sum(space.k for space in spaces)
+
+        if weights is None:
+            weights = [1.0] * len(spaces)
+
+        merged_labels, indices = LabelSet.merge_many(
+            [space.labels for space in spaces]
+        )
+        expanded = []
+        assert len(spaces) == len(indices), (len(spaces), len(indices))
+        for i in range(len(spaces)):
+            assert spaces[i].u.shape[0] == len(indices[i])
+            expanded_u = np.zeros((len(merged_labels), spaces[i].u.shape[1]))
+            weighted_s = spaces[i].sigma * weights[i]
+            expanded.append((expanded_u, weighted_s))
+        spaces.clear()
+
+        new_u, new_sigma = eigenmath.combine_multiple_eigenspaces(
+            expanded, k
+        )
+        return cls(new_u, new_sigma, merged_labels)
 
     def truncated_to(self, k):
         '''
