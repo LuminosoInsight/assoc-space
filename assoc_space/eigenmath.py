@@ -169,12 +169,12 @@ def combine_multiple_eigenspaces(US_list, rank=None):
     # be realized here, since we will immediately recompute Q_j^T * U_i below.
     # However, the only way I could think of to store those is in a four-
     # dimensional array, and that may be a task for another time.
-    for i, (U, S) in enumerate(US_list):
+    for j, (U, S) in enumerate(US_list):
         # We've already taken care of Q_0, but this is the easiest way to
         # prevent off-by-one errors.
-        if i == 0:
+        if j == 0:
             continue
-        M_sum = np.zeros((l, k_list[i]))
+        M_sum = np.zeros((l, k_list[j]))
         for (Q, R) in QR_list:
             M_sum += Q.dot(Q.T.dot(U))
         Q, R = np.linalg.qr(U - M_sum)
@@ -183,15 +183,15 @@ def combine_multiple_eigenspaces(US_list, rank=None):
     # Construct components of each U in the basis Q_0, ..., Q_{n-1}, and use
     # them to express the sum of the X_i in that basis.
     K = np.zeros((dim, dim))
-    for i, (U, S) in enumerate(US_list):
+    for j, (U, S) in enumerate(US_list):
         V_list = []
-        for j, (Q, R) in enumerate(QR_list):
-            if j < i:
+        for i, (Q, R) in enumerate(QR_list):
+            if i < j:
                 V_list.append(Q.T.dot(U))
-            elif j == i:
+            elif i == j:
                 V_list.append(R)
             else:
-                V_list.append(np.zeros((k_list[j], k_list[i])))
+                V_list.append(np.zeros((k_list[i], k_list[j])))
         V = np.concatenate(V_list)
         K += (V * S).dot(V.T)
 
