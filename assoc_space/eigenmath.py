@@ -112,7 +112,7 @@ def combine_eigenspaces(U_X, S_X, U_Y, S_Y, rank):
     return np.c_[U_X, Q].dot(Up), Sp         # Eqn. (4)
 
 
-def combine_multiple_eigenspaces(US_list, rank):
+def combine_multiple_eigenspaces(US_list, rank=None):
     """
     Given a list of eigenvalue decompositions of a list of matrices
     [X_0, X_1, ..., X_n], find the decomposition of their sum
@@ -126,7 +126,8 @@ def combine_multiple_eigenspaces(US_list, rank):
     Inputs:
 
     - US_list: a list of tuples (U_i, S_i) that are the decomposition of X_i
-    - rank: the number of dimensions to trim the result to.
+    - rank: the number of dimensions to trim the result to. By default, no
+        trimming occurs.
 
     Returns: the new decomposition U, S.
 
@@ -136,18 +137,27 @@ def combine_multiple_eigenspaces(US_list, rank):
     [1] http://www.merl.com/publications/docs/TR2006-059.pdf
     """
 
-    # These are used mainly for making identity and zero matrices of the
-    # right dimension
-    l = US_list[0][0].shape[0]  # l is the "long" side of our decompositions
-    k = US_list[0][0].shape[1]  # k is our "thin" dimension, usually 150
-    n = len(US_list)  # n is the number of decompositions
+    # These are used mainly for initializing matrices of the right dimension
+    # n is the number of decompositions.
+    n = len(US_list)
+    # l is the "long" side of our decomposition. We check to make sure that 
+    # the matrices all have the same long dimension, otherwise their labels
+    # are misaligned.
+    l_list = [U.shape[0] for U, S in US_list]
+    assert len(l_list) == len([l for l in l_list if l == l_list[0]])
+    l = l_list[0]
+    # k is our "thin" dimension, usually 150. This may differ from U_i to U_j.
+    k_list = [len(S) for U, S in US_list]
+    dim = sum(k_list)
+    if rank is None:
+        rank = dim
 
     # Check to make sure that the columns of U_0 are orthonormal. If not,
     # normalize using QR decomposition. This behavior replaces the redecompose
     # function. We do this check for speed; the QR decomposition will work
     # even if the columns are orthonormal.
     U_0 = US_list[0][0]
-    I = np.identity(k)
+    I = np.identity(k_list[0])
     if np.allclose(U_0.T.dot(U_0), I):
         QR_list = [(U_0, I)]
     else:
@@ -159,8 +169,12 @@ def combine_multiple_eigenspaces(US_list, rank):
     # be realized here, since we will immediately recompute Q_j^T * U_i below.
     # However, the only way I could think of to store those is in a four-
     # dimensional array, and that may be a task for another time.
-    for (U, S) in US_list[1:]:
-        M_sum = np.zeros((l, k))
+    for i, (U, S) in enumerate(US_list):
+        # We've already taken care of Q_0, but this is the easiest way to
+        # prevent off-by-one errors.
+        if i == 0:
+            continue
+        M_sum = np.zeros((l, k_list[i]))
         for (Q, R) in QR_list:
             M_sum += Q.dot(Q.T.dot(U))
         Q, R = np.linalg.qr(U - M_sum)
@@ -168,7 +182,7 @@ def combine_multiple_eigenspaces(US_list, rank):
 
     # Construct components of each U in the basis Q_0, ..., Q_{n-1}, and use
     # them to express the sum of the X_i in that basis.
-    K = np.zeros((n*k, n*k))
+    K = np.zeros((dim, dim))
     for i, (U, S) in enumerate(US_list):
         V_list = []
         for j, (Q, R) in enumerate(QR_list):
@@ -177,7 +191,7 @@ def combine_multiple_eigenspaces(US_list, rank):
             elif j == i:
                 V_list.append(R)
             else:
-                V_list.append(np.zeros((k, k)))
+                V_list.append(np.zeros((k_list[j], k_list[i])))
         V = np.concatenate(V_list)
         K += (V * S).dot(V.T)
 
