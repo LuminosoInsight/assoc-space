@@ -69,9 +69,8 @@ class LabelSet(object):
         """
         Get the item at a given index.
 
-        If `index` is a slice, you will get back that slice of items. If it's
-        the slice [:], exactly the same object is returned. (If you want an
-        independent copy of an OrderedSet, use `OrderedSet.copy()`.)
+        If `index` is a slice, you will get back that slice of items. As with
+        lists, the slice [:] is a concise way to get a copy.
 
         If `index` is an iterable, you'll get the OrderedSet of items
         corresponding to those indices. This is similar to NumPy's
@@ -561,9 +560,6 @@ class AssocSpace(object):
         other_expanded[indices, :] = other.u
 
         self_weight, other_weight = weights
-
-        if k is None:
-            k = self.k + other.k
 
         # The largest eigenvalue is already normalized to 1 by the constructor
         new_u, new_sigma = eigenmath.combine_eigenspaces(
