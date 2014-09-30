@@ -89,12 +89,6 @@ def combine_eigenspaces(U_X, S_X, U_Y, S_Y, rank=None):
 
     [1] http://www.merl.com/publications/docs/TR2006-059.pdf
     '''
-    if rank is None:
-        # If the rank is unspecified, we produce as many eigenvalues as are
-        # in the input data -- that is, the sum of the ranks of the input
-        # matrices.
-        rank = len(S_X) + len(S_Y)
-
     # Find the basis for the orthogonal component of U_Y
     M_1 = U_X.T.dot(U_Y)
     Q, R = np.linalg.qr(U_Y - U_X.dot(M_1))  # Eqn. (1)
@@ -110,8 +104,12 @@ def combine_eigenspaces(U_X, S_X, U_Y, S_Y, rank=None):
 
     # Sort and trim - we do this on the small matrices, for speed
     order = np.argsort(Sp)[::-1]
-    Sp = Sp[order][:rank]
-    Up = Up[:, order][:, :rank]
+    
+    Sp = Sp[order]
+    Up = Up[:, order]
+    if rank is not None:
+        Sp = Sp[:rank]
+        Up = Up[:, :rank]
 
     # Done!
     return np.c_[U_X, Q].dot(Up), Sp         # Eqn. (4)
