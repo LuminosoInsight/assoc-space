@@ -144,7 +144,7 @@ def combine_multiple_eigenspaces(US_list, rank=None):
     # the matrices all have the same long dimension, otherwise their labels
     # are misaligned.
     l_list = [U.shape[0] for U, S in US_list]
-    assert len(l_list) == len([l for l in l_list if l == l_list[0]])
+    assert all([l == l_list[0] for l in l_list])
     l = l_list[0]
     # k is our "thin" dimension, usually 150. This may differ from U_i to U_j.
     k_list = [len(S) for U, S in US_list]
@@ -174,7 +174,7 @@ def combine_multiple_eigenspaces(US_list, rank=None):
         # prevent off-by-one errors.
         if j == 0:
             continue
-        M_sum = np.zeros((l, k_list[j]))
+        M_sum = np.zeros(U.shape)
         for (Q, R) in QR_list:
             M_sum += Q.dot(Q.T.dot(U))
         Q, R = np.linalg.qr(U - M_sum)
