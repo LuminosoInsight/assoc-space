@@ -3,7 +3,8 @@ import numpy as np
 import scipy.sparse
 
 from assoc_space.eigenmath import norm, normalize, normalize_rows, \
-    eigensystem, redecompose, combine_eigenspaces
+    eigensystem, redecompose, combine_eigenspaces, \
+    combine_multiple_eigenspaces
 
 
 def compare_cols_within_sign(m1, m2):
