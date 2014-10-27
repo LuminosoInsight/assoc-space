@@ -139,6 +139,11 @@ class LabelSet(object):
 
     @staticmethod
     def merge_many(labelsets):
+        """
+        Given a list of LabelSets, return a new LabelSet that merges the ones
+        in the list, and a list of indices for every merged LabelSet indicating
+        where its items are in the merged result.
+        """
         merged = labelsets[0].copy()
         index_lists = [list(range(len(labelsets[0])))]
         for other_labels in labelsets[1:]:
