@@ -128,10 +128,23 @@ MORE_ENTRIES = [
     (0.5, 'blue', 'yellow')
 ]
 
+STILL_MORE_ENTRIES = [
+    (4, 'apple', 'red'),
+    (2, 'kumquat', 'tasty'),
+    (0.5, 'banana', 'ferret'),
+    (2, 'apple', 'tasty'),
+    (1, 'apple', 'kumquat'),
+    (2.5, 'ferret', 'red'),
+    (3, 'orange', 'kumquat'),
+    (1, 'blueberries', 'blue')
+]
+
 
 def test_merging():
     # The actual math of merging is tested separately in test_eigenmath; here
     # we just spot-verify that AssocSpace is using it reasonably
+    # All of these AssocSpaces are small and have negative eigenvalues,
+    # and so will behave oddly.
 
     # Generate test assoc spaces and merge them
     assoc1 = AssocSpace.from_entries(ENTRIES, k=4)
@@ -149,6 +162,17 @@ def test_merging():
     assert (assoc2.assoc_between_two_terms('apple', 'red') <
             merged.assoc_between_two_terms('apple', 'red') <
             assoc1.assoc_between_two_terms('apple', 'red'))
+
+    # Test merge_many
+    assoc3 = AssocSpace.from_entries(STILL_MORE_ENTRIES, k=4)
+    new_merged = AssocSpace.merge_many([assoc1, assoc2, assoc3])
+    eq_(new_merged.k, 12)
+
+    # Make sure that all the labels are there
+    new_merged = AssocSpace.merge_many([assoc1, assoc2, assoc3], k=4)
+    eq_(' '.join(new_merged.labels),
+        'apple red green celery orange banana yellow lemon blue tasty ferret '
+        'kumquat blueberries')
 
 
 def test_truncation():

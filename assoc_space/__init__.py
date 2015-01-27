@@ -591,6 +591,7 @@ class AssocSpace(object):
         for i in range(len(spaces)):
             assert spaces[i].u.shape[0] == len(indices[i])
             expanded_u = np.zeros((len(merged_labels), spaces[i].u.shape[1]))
+            expanded_u[indices[i], :] = spaces[i].u
             weighted_s = spaces[i].sigma * weights[i]
             expanded.append((expanded_u, weighted_s))
         spaces.clear()
