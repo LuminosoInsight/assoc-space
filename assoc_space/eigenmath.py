@@ -203,13 +203,14 @@ def combine_multiple_eigenspaces(US_list, rank=None):
     Sp = Sp[order][:rank]
     Up = Up[:, order][:, :rank]
 
+    # Rather than concatenating together all the Qs and then dotting with Up,
+    # go through each of the Qs individually, so as to avoid creating a mega-Q
+    # matrix. This saves some memory.
     k_indices = [sum(k_list[:i]) for i in range(len(k_list) + 1)]
     Qp = np.zeros((QR_list[0][0].shape[0], Up.shape[1]))
 
     for i, (Q, R) in enumerate(QR_list):
         Qp += Q.dot(Up[k_indices[i]:k_indices[i+1], :])
-        # Remove used Q's from memory
-        QR_list[i] = None
 
     # Done!
     return Qp, Sp
