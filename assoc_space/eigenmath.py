@@ -203,8 +203,16 @@ def combine_multiple_eigenspaces(US_list, rank=None):
     Sp = Sp[order][:rank]
     Up = Up[:, order][:, :rank]
 
+    k_indices = [sum(k_list[:i]) for i in range(len(k_list) + 1)]
+    Qp = np.zeros((QR_list[0][0].shape[0], Up.shape[1]))
+
+    for i, (Q, R) in enumerate(QR_list):
+        Qp += Q.dot(Up[k_indices[i]:k_indices[i+1], :])
+        # Remove used Q's from memory
+        QR_list[i] = None
+
     # Done!
-    return np.concatenate([Q for Q, R in QR_list], axis=1).dot(Up), Sp
+    return Qp, Sp
 
 
 def redecompose(U, S):
