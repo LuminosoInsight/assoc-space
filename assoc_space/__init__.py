@@ -402,6 +402,15 @@ class AssocSpace(object):
                 result += self._row_cache[term] * weight
         return eigenmath.normalize(result * np.exp(self.sigma / 2))
 
+    def most_similar_to_vector(self, vec):
+        """
+        Finds the term most similar to the given vector, returning a
+        (term, similarity) tuple. This method is much faster than
+        terms_similar_to_vector.
+        """
+        index = np.argmax(self.assoc.dot(vec))
+        return self.labels[index], self.assoc[index].dot(vec)
+
     def terms_similar_to_vector(self, vec, sorted=True, filter=None):
         """
         Find the terms most similar to the given vector, returning a list of
