@@ -408,20 +408,31 @@ class AssocSpace(object):
         (term, similarity) tuple. This method is much faster than
         terms_similar_to_vector.
         """
+        sim = self.assoc.dot(vec)
         index = np.argmax(self.assoc.dot(vec))
-        return self.labels[index], self.assoc[index].dot(vec)
+        return self.labels[index], sim[index]
 
-    def terms_similar_to_vector(self, vec, sorted=True, filter=None):
+    def terms_similar_to_vector(self, vec, sorted=True, filter=None, num=None):
         """
         Find the terms most similar to the given vector, returning a list of
         (term, similarity) tuples in descending order of similarity.  (Set
         `sorted` to False to skip sorting.)
         """
-        similarity = zip(self.labels, np.dot(self.assoc, vec))
-        if sorted:
-            similarity.sort(key=lambda x: x[1], reverse=True)
-        if filter is not None:
-            similarity = [item for item in similarity if filter(item[0])]
+        if num is not None and sorted:
+            sim = self.assoc.dot(vec)
+            indices = np.argsort(self.assoc.dot(vec))[::-1][:num]
+            if filter is not None:
+                return [(self.labels[index], sim[index])
+                        for index in indices if filter(self.labels[index])]
+            else:
+                return [(self.labels[index], sim[index])
+                        for index in indices]
+        else:
+            similarity = zip(self.labels, np.dot(self.assoc, vec))
+            if sorted:
+                similarity.sort(key=lambda x: x[1], reverse=True)
+            if filter is not None:
+                similarity = [item for item in similarity if filter(item[0])]
         return similarity
 
     def show_similar(self, obj, num=20, filter=None):
@@ -433,7 +444,7 @@ class AssocSpace(object):
         self.show_similar_to_vector(self.to_vector(obj), num, filter)
 
     def show_similar_to_vector(self, vec, num=20, filter=None, include_neg=False):
-        results = self.terms_similar_to_vector(vec, filter=filter)
+        results = self.terms_similar_to_vector(vec, filter=filter, num=num)
         for term, weight in results[:num]:
             print("%-20s\t%+6.6f" % (term, weight))
         if include_neg:
