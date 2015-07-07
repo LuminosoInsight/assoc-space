@@ -4,8 +4,6 @@ from scipy.sparse import coo_matrix, spdiags
 from collections import defaultdict
 import os
 
-import itertools
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -437,7 +435,7 @@ class AssocSpace(object):
         if sorted:
             data.sort(key=lambda x: x[1], reverse=True)
         if filter is not None:
-            data = [item for item in similarity if filter(item[0])]
+            data = [item for item in data if filter(item[0])]
         if num is not None:
             data = data[:num]
         return data
