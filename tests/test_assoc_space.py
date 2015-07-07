@@ -191,7 +191,6 @@ def test_vectorizing_and_similar_terms():
 
     most_similar = assoc.most_similar_to_vector(vector)
     eq_(most_similar[0], labels[0])
-    print(most_similar, scores[0])
     eq_(most_similar[1], scores[0])
 
     assert labels.index('banana') < labels.index('apple')

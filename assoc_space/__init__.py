@@ -4,6 +4,8 @@ from scipy.sparse import coo_matrix, spdiags
 from collections import defaultdict
 import os
 
+import operator
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -409,31 +411,38 @@ class AssocSpace(object):
         terms_similar_to_vector.
         """
         sim = self.assoc.dot(vec)
-        index = np.argmax(self.assoc.dot(vec))
+        index = np.argmax(sim)
         return self.labels[index], sim[index]
 
-    def terms_similar_to_vector(self, vec, sorted=True, filter=None, num=None):
+    def terms_similar_to_vector(self, vec, sorted=True, filter=None, num=20):
         """
-        Find the terms most similar to the given vector, returning a list of
-        (term, similarity) tuples in descending order of similarity.  (Set
-        `sorted` to False to skip sorting.)
+        Find the `num` most similar terms to the given vector, returning a list
+        of (term, similarity) tuples.
+
+        If `sorted` is True, the list is in descending order of similarity.
+
+        If `filter` is given, the list will only contains terms that pass the
+        filter.
+
+        If `num` is None, then the list will contain all terms in the
+        assoc space.
         """
-        if num is not None and sorted:
+        # The path directly below is faster when num < self.assoc.shape / 2
+        # according to empirical speed tests
+        if sorted and not filter and num and num < self.assoc.shape[0] / 2:
             sim = self.assoc.dot(vec)
-            indices = np.argsort(self.assoc.dot(vec))[::-1][:num]
-            if filter is not None:
-                return [(self.labels[index], sim[index])
-                        for index in indices if filter(self.labels[index])]
-            else:
-                return [(self.labels[index], sim[index])
-                        for index in indices]
-        else:
-            similarity = zip(self.labels, np.dot(self.assoc, vec))
-            if sorted:
-                similarity.sort(key=lambda x: x[1], reverse=True)
-            if filter is not None:
-                similarity = [item for item in similarity if filter(item[0])]
-        return similarity
+            indices = np.argsort(sim)[::-1][:num]
+            return [(self.labels[index], sim[index]) for index in indices]
+
+        data = zip(self.labels, np.dot(self.assoc, vec))
+        if sorted:
+            data.sort(key=operator.itemgetter(1), reverse=True)
+        if filter is not None:
+            data = [item for item in data if filter(item[0])]
+        if num is not None:
+            data = data[:num]
+        return data
+
 
     def show_similar(self, obj, num=20, filter=None):
         """
