@@ -4,6 +4,8 @@ from scipy.sparse import coo_matrix, spdiags
 from collections import defaultdict
 import os
 
+import operator
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -425,7 +427,8 @@ class AssocSpace(object):
         If `num` is None, then the list will contain all terms in the
         assoc space.
         """
-        # num < self.assoc.shape / 2 is from emperical testing
+        # The path directly below is faster when num < self.assoc.shape / 2
+        # according to empirical speed tests
         if sorted and not filter and num and num < self.assoc.shape[0] / 2:
             sim = self.assoc.dot(vec)
             indices = np.argsort(sim)[::-1][:num]
@@ -433,7 +436,7 @@ class AssocSpace(object):
 
         data = zip(self.labels, np.dot(self.assoc, vec))
         if sorted:
-            data.sort(key=lambda x: x[1], reverse=True)
+            data.sort(key=operator.itemgetter(1), reverse=True)
         if filter is not None:
             data = [item for item in data if filter(item[0])]
         if num is not None:
