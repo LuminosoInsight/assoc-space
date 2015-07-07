@@ -416,9 +416,16 @@ class AssocSpace(object):
 
     def terms_similar_to_vector(self, vec, sorted=True, filter=None, num=20):
         """
-        Find the terms most similar to the given vector, returning a list of
-        (term, similarity) tuples in descending order of similarity.  (Set
-        `sorted` to False to skip sorting.)
+        Find the `num` most similar terms to the given vector, returning a list
+        of (term, similarity) tuples.
+
+        If `sorted` is True, the list is in descending order of similarity.
+
+        If `filter` is given, the list will only contains terms that pass the
+        filter.
+
+        If `num` is None, then the list will contain all terms in the
+        assoc space.
         """
         # num < self.assoc.shape / 2 is from emperical testing
         if sorted and not filter and num and num < self.assoc.shape[0] / 2:
