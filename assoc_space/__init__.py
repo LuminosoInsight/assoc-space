@@ -429,16 +429,24 @@ class AssocSpace(object):
         """
         # The path directly below is faster when num < self.assoc.shape / 2
         # according to empirical speed tests
-        if sorted and not filter and num and num < self.assoc.shape[0] / 2:
+        if sorted and num and num < self.assoc.shape[0] / 2:
             sim = self.assoc.dot(vec)
-            indices = np.argsort(sim)[::-1][:num]
-            return [(self.labels[index], sim[index]) for index in indices]
+            indices = np.argsort(sim)[::-1]
+            if not filter:
+                return [(self.labels[index], sim[index]) for index in indices[:num]]
+
+            data = []
+            for index in indices:
+                if len(data) == num:
+                    return data
+                if filter(self.labels[index]):
+                    data.append((self.labels[index], sim[index]))
 
         data = zip(self.labels, np.dot(self.assoc, vec))
-        if sorted:
-            data.sort(key=operator.itemgetter(1), reverse=True)
         if filter is not None:
             data = [item for item in data if filter(item[0])]
+        if sorted:
+            data.sort(key=operator.itemgetter(1), reverse=True)
         if num is not None:
             data = data[:num]
         return data
