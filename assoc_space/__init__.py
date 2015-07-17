@@ -442,7 +442,7 @@ class AssocSpace(object):
                 if filter(self.labels[index]):
                     data.append((self.labels[index], sim[index]))
 
-        data = zip(self.labels, np.dot(self.assoc, vec))
+        data = list(zip(self.labels, np.dot(self.assoc, vec)))
         if filter is not None:
             data = [item for item in data if filter(item[0])]
         if sorted:
