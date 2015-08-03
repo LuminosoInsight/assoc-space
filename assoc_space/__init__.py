@@ -438,9 +438,10 @@ class AssocSpace(object):
             data = []
             for index in indices:
                 if len(data) == num:
-                    return data
+                    break
                 if filter(self.labels[index]):
                     data.append((self.labels[index], sim[index]))
+            return data
 
         data = list(zip(self.labels, np.dot(self.assoc, vec)))
         if filter is not None:
